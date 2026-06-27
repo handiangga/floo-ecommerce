@@ -1,0 +1,165 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: #f5f1ec;
+  --foreground: #2b2b2b;
+
+  --card: #ffffff;
+  --card-foreground: #2b2b2b;
+
+  --popover: #ffffff;
+  --popover-foreground: #2b2b2b;
+
+  --primary: #a67c52;
+  --primary-foreground: #ffffff;
+
+  --secondary: #eee7df;
+  --secondary-foreground: #2b2b2b;
+
+  --muted: #f3eee8;
+  --muted-foreground: #777777;
+
+  --accent: #e8d8c7;
+  --accent-foreground: #2b2b2b;
+
+  --destructive: #dc2626;
+
+  --border: #e5d8ca;
+  --input: #e5d8ca;
+  --ring: #a67c52;
+
+  --chart-1: #a67c52;
+  --chart-2: #c49a6c;
+  --chart-3: #d8b68d;
+  --chart-4: #e8d8c7;
+  --chart-5: #777777;
+
+  --radius: 1rem;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #2b2b2b;
+  --sidebar-primary: #a67c52;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3eee8;
+  --sidebar-accent-foreground: #2b2b2b;
+  --sidebar-border: #e5d8ca;
+  --sidebar-ring: #a67c52;
+}
+
+.dark {
+  --background: #181818;
+  --foreground: #f5f1ec;
+
+  --card: #232323;
+  --card-foreground: #f5f1ec;
+
+  --popover: #232323;
+  --popover-foreground: #f5f1ec;
+
+  --primary: #c79d72;
+  --primary-foreground: #ffffff;
+
+  --secondary: #2f2f2f;
+  --secondary-foreground: #f5f1ec;
+
+  --muted: #2b2b2b;
+  --muted-foreground: #b0b0b0;
+
+  --accent: #3a3a3a;
+  --accent-foreground: #f5f1ec;
+
+  --destructive: #ef4444;
+
+  --border: #333333;
+  --input: #333333;
+  --ring: #c79d72;
+
+  --chart-1: #c79d72;
+  --chart-2: #b88b60;
+  --chart-3: #9d734c;
+  --chart-4: #777777;
+  --chart-5: #555555;
+
+  --sidebar: #232323;
+  --sidebar-foreground: #f5f1ec;
+  --sidebar-primary: #c79d72;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2b2b2b;
+  --sidebar-accent-foreground: #f5f1ec;
+  --sidebar-border: #333333;
+  --sidebar-ring: #c79d72;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    @apply font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+.font-luxury {
+  font-family: var(--font-cormorant);
+}
+
+.section-padding {
+  @apply px-4 md:px-8 lg:px-12;
+}
+
+.container-custom {
+  @apply mx-auto w-full max-w-7xl;
+}
