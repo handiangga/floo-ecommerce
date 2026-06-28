@@ -1,0 +1,7 @@
+module.exports = {
+  PENDING: "PENDING",
+  PICKED: "PICKED",
+  SHIPPED: "SHIPPED",
+  DELIVERED: "DELIVERED",
+  RETURNED: "RETURNED",
+};

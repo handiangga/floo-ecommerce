@@ -3,25 +3,25 @@
 const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  class Cart extends Model {
+  class Wishlist extends Model {
     static associate(models) {
-      Cart.belongsTo(models.Customer, {
+      Wishlist.belongsTo(models.Customer, {
         foreignKey: "customer_id",
         as: "customer",
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       });
 
-      Cart.hasMany(models.CartItem, {
-        foreignKey: "cart_id",
-        as: "items",
+      Wishlist.belongsTo(models.Product, {
+        foreignKey: "product_id",
+        as: "product",
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       });
     }
   }
 
-  Cart.init(
+  Wishlist.init(
     {
       id: {
         type: DataTypes.BIGINT,
@@ -33,22 +33,31 @@ module.exports = (sequelize, DataTypes) => {
       customer_id: {
         type: DataTypes.BIGINT,
         allowNull: false,
-        unique: true,
         validate: {
           notNull: {
             msg: "Customer is required",
           },
         },
       },
+
+      product_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        validate: {
+          notNull: {
+            msg: "Product is required",
+          },
+        },
+      },
     },
     {
       sequelize,
-      modelName: "Cart",
-      tableName: "Carts",
+      modelName: "Wishlist",
+      tableName: "Wishlists",
       timestamps: true,
       underscored: true,
     },
   );
 
-  return Cart;
+  return Wishlist;
 };

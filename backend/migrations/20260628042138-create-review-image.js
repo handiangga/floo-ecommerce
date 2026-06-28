@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Carts", {
+    await queryInterface.createTable("ReviewImages", {
       id: {
         type: Sequelize.BIGINT,
         allowNull: false,
@@ -11,15 +11,20 @@ module.exports = {
         primaryKey: true,
       },
 
-      customer_id: {
+      review_id: {
         type: Sequelize.BIGINT,
         allowNull: false,
         references: {
-          model: "Customers",
+          model: "Reviews",
           key: "id",
         },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
+      },
+
+      image: {
+        type: Sequelize.TEXT,
+        allowNull: false,
       },
 
       createdAt: {
@@ -39,22 +44,12 @@ module.exports = {
     // INDEX
     // ===========================
 
-    await queryInterface.addIndex("Carts", ["customer_id"], {
-      name: "carts_customer_idx",
-    });
-
-    // ===========================
-    // ONE CART PER CUSTOMER
-    // ===========================
-
-    await queryInterface.addConstraint("Carts", {
-      fields: ["customer_id"],
-      type: "unique",
-      name: "unique_customer_cart",
+    await queryInterface.addIndex("ReviewImages", ["review_id"], {
+      name: "review_images_review_idx",
     });
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable("Carts");
+    await queryInterface.dropTable("ReviewImages");
   },
 };

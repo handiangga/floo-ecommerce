@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Carts", {
+    await queryInterface.createTable("Wishlists", {
       id: {
         type: Sequelize.BIGINT,
         allowNull: false,
@@ -16,6 +16,17 @@ module.exports = {
         allowNull: false,
         references: {
           model: "Customers",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
+      },
+
+      product_id: {
+        type: Sequelize.BIGINT,
+        allowNull: false,
+        references: {
+          model: "Products",
           key: "id",
         },
         onUpdate: "CASCADE",
@@ -36,25 +47,33 @@ module.exports = {
     });
 
     // ===========================
-    // INDEX
+    // UNIQUE
     // ===========================
 
-    await queryInterface.addIndex("Carts", ["customer_id"], {
-      name: "carts_customer_idx",
+    await queryInterface.addConstraint("Wishlists", {
+      fields: ["customer_id", "product_id"],
+      type: "unique",
+      name: "wishlist_customer_product_unique",
     });
 
     // ===========================
-    // ONE CART PER CUSTOMER
+    // INDEX
     // ===========================
 
-    await queryInterface.addConstraint("Carts", {
-      fields: ["customer_id"],
-      type: "unique",
-      name: "unique_customer_cart",
+    await queryInterface.addIndex("Wishlists", ["customer_id"], {
+      name: "wishlists_customer_idx",
+    });
+
+    await queryInterface.addIndex("Wishlists", ["product_id"], {
+      name: "wishlists_product_idx",
+    });
+
+    await queryInterface.addIndex("Wishlists", ["customer_id", "product_id"], {
+      name: "wishlists_customer_product_idx",
     });
   },
 
   async down(queryInterface) {
-    await queryInterface.dropTable("Carts");
+    await queryInterface.dropTable("Wishlists");
   },
 };

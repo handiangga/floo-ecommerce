@@ -1,24 +1,26 @@
-const { error } = require("../helpers/response");
+const ResponseHelper = require("../helpers/response.helper");
 
-module.exports = (schema) => {
+const validationMiddleware = (schema) => {
   return (req, res, next) => {
-    const { error: validationError } = schema.validate(req.body, {
+    const { error, value } = schema.validate(req.body, {
       abortEarly: false,
       stripUnknown: true,
     });
 
-    if (validationError) {
-      return error(
+    if (error) {
+      return ResponseHelper.validation(
         res,
-        "Validation Error",
-        422,
-        validationError.details.map((err) => ({
+        error.details.map((err) => ({
           field: err.path.join("."),
           message: err.message,
         })),
       );
     }
 
+    req.body = value;
+
     next();
   };
 };
+
+module.exports = validationMiddleware;
