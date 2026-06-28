@@ -4,9 +4,13 @@ const ResponseHelper = require("../helpers/response.helper");
 class CategoryController {
   async index(req, res, next) {
     try {
-      const result = await CategoryService.findAll(req.query);
+      const result = await CategoryService.getAll(req.query);
 
-      return ResponseHelper.pagination(res, result.data, result.meta);
+      return ResponseHelper.success(
+        res,
+        result,
+        "Categories retrieved successfully",
+      );
     } catch (err) {
       next(err);
     }
@@ -14,13 +18,13 @@ class CategoryController {
 
   async show(req, res, next) {
     try {
-      const category = await CategoryService.findById(req.params.id);
+      const result = await CategoryService.getById(req.params.id);
 
-      if (!category) {
-        return ResponseHelper.notFound(res, "Category not found");
-      }
-
-      return ResponseHelper.success(res, category);
+      return ResponseHelper.success(
+        res,
+        result,
+        "Category retrieved successfully",
+      );
     } catch (err) {
       next(err);
     }
@@ -28,11 +32,11 @@ class CategoryController {
 
   async store(req, res, next) {
     try {
-      const category = await CategoryService.create(req.body);
+      const result = await CategoryService.create(req.body);
 
       return ResponseHelper.created(
         res,
-        category,
+        result,
         "Category created successfully",
       );
     } catch (err) {
@@ -42,11 +46,11 @@ class CategoryController {
 
   async update(req, res, next) {
     try {
-      const category = await CategoryService.update(req.params.id, req.body);
+      const result = await CategoryService.update(req.params.id, req.body);
 
-      return ResponseHelper.updated(
+      return ResponseHelper.success(
         res,
-        category,
+        result,
         "Category updated successfully",
       );
     } catch (err) {
@@ -58,7 +62,7 @@ class CategoryController {
     try {
       await CategoryService.delete(req.params.id);
 
-      return ResponseHelper.deleted(res);
+      return ResponseHelper.success(res, null, "Category deleted successfully");
     } catch (err) {
       next(err);
     }

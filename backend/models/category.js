@@ -100,7 +100,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "Category",
       tableName: "Categories",
       timestamps: true,
-      underscored: true,
 
       hooks: {
         beforeValidate(category) {

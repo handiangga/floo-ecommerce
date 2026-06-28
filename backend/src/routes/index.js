@@ -10,10 +10,10 @@ router.use("/auth", require("./auth.route"));
 // ======================
 router.use("/categories", require("./category.route"));
 
-// router.use("/colors", require("./color.route"));
-// router.use("/sizes", require("./size.route"));
-// router.use("/banners", require("./banner.route"));
-// router.use("/vouchers", require("./voucher.route"));
+router.use("/colors", require("./color.route"));
+router.use("/sizes", require("./size.route"));
+router.use("/banners", require("./banner.route"));
+router.use("/vouchers", require("./voucher.route"));
 
 // ======================
 // PRODUCT
@@ -42,5 +42,12 @@ router.use("/categories", require("./category.route"));
 // router.use("/orders", require("./order.route"));
 // router.use("/payments", require("./payment.route"));
 // router.use("/shipments", require("./shipment.route"));
+
+router.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "API Running",
+  });
+});
 
 module.exports = router;

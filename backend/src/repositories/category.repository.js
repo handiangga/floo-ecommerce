@@ -1,39 +1,61 @@
 const { Category } = require("../../models");
+const { Op } = require("sequelize");
 
 class CategoryRepository {
-  async findAll({ limit, offset }) {
-    const { rows, count } = await Category.findAndCountAll({
+  async findAll({
+    limit,
+    offset,
+    search = "",
+    status,
+    sort = "id",
+    order = "DESC",
+  }) {
+    const where = {};
+
+    if (search) {
+      where.name = {
+        [Op.iLike]: `%${search}%`,
+      };
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    return Category.findAndCountAll({
+      where,
       limit,
       offset,
-      order: [["sort_order", "ASC"]],
+      order: [[sort, order]],
     });
-
-    return {
-      rows,
-      count,
-    };
   }
 
   async findById(id) {
-    return await Category.findByPk(id);
+    return Category.findByPk(id);
   }
 
   async findBySlug(slug) {
-    return await Category.findOne({
+    return Category.findOne({
       where: { slug },
     });
   }
 
   async create(payload) {
-    return await Category.create(payload);
+    return Category.create(payload);
   }
 
-  async update(category, payload) {
-    return await category.update(payload);
+  async update(id, payload) {
+    await Category.update(payload, {
+      where: { id },
+    });
+
+    return this.findById(id);
   }
 
-  async delete(category) {
-    return await category.destroy();
+  async delete(id) {
+    return Category.destroy({
+      where: { id },
+    });
   }
 }
 

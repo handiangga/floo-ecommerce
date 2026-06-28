@@ -55,7 +55,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "Wishlist",
       tableName: "Wishlists",
       timestamps: true,
-      underscored: true,
     },
   );
 

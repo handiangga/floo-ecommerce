@@ -8,12 +8,26 @@ module.exports = {
   }),
 
   register: Joi.object({
-    name: Joi.string().min(3).max(100).required(),
+    name: Joi.string().trim().min(3).max(100).required(),
 
     email: Joi.string().email().required(),
 
-    phone: Joi.string().min(10).max(20).required(),
+    phone: Joi.string().trim().min(10).max(20).required(),
 
-    password: Joi.string().min(6).required(),
+    password: Joi.string().min(6).max(100).required(),
+  }),
+
+  changePassword: Joi.object({
+    oldPassword: Joi.string().required(),
+
+    newPassword: Joi.string().min(6).max(100).required(),
+  }),
+
+  forgotPassword: Joi.object({
+    email: Joi.string().email().required(),
+  }),
+
+  resetPassword: Joi.object({
+    password: Joi.string().min(6).max(100).required(),
   }),
 };

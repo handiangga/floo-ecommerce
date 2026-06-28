@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 
 const AuthRepository = require("../repositories/auth.repository");
-
 const PasswordHelper = require("../helpers/password.helper");
 
 class AuthService {
@@ -25,18 +24,28 @@ class AuthService {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: process.env.JWT_EXPIRES_IN || "7d",
       },
     );
 
+    await AuthRepository.updateLastLogin(user.id);
+
+    const userData = user.toJSON();
+
+    delete userData.password;
+
     return {
       token,
-      user,
+      user: userData,
     };
   }
 
   async profile(id) {
     return await AuthRepository.findById(id);
+  }
+
+  async logout() {
+    return true;
   }
 }
 

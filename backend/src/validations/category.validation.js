@@ -4,11 +4,11 @@ module.exports = {
   create: Joi.object({
     name: Joi.string().min(2).max(100).required(),
 
-    image: Joi.string().allow(null, ""),
+    image: Joi.string().allow(null, "").optional(),
 
-    banner: Joi.string().allow(null, ""),
+    banner: Joi.string().allow(null, "").optional(),
 
-    description: Joi.string().allow(null, ""),
+    description: Joi.string().allow(null, "").optional(),
 
     sort_order: Joi.number().integer().default(0),
 

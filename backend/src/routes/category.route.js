@@ -8,10 +8,12 @@ const validation = require("../middlewares/validation");
 
 const CategoryValidation = require("../validations/category.validation");
 
+// Public
 router.get("/", CategoryController.index);
 
 router.get("/:id", CategoryController.show);
 
+// Admin
 router.post(
   "/",
   authentication,

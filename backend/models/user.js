@@ -128,7 +128,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "User",
       tableName: "Users",
       timestamps: true,
-      underscored: true,
 
       hooks: {
         async beforeCreate(user) {

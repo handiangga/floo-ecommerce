@@ -1,30 +1,47 @@
 const CategoryRepository = require("../repositories/category.repository");
+
 const PaginationHelper = require("../helpers/pagination.helper");
 const SlugHelper = require("../helpers/slug.helper");
 
 class CategoryService {
-  async findAll(query) {
+  async getAll(query) {
     const { page, limit, offset } = PaginationHelper.getPagination(query);
 
-    const { rows, count } = await CategoryRepository.findAll({
+    const result = await CategoryRepository.findAll({
       limit,
       offset,
+      search: query.search || "",
+      status: query.status,
+      sort: query.sort || "id",
+      order: query.order || "DESC",
     });
 
     return {
-      data: rows,
-      meta: PaginationHelper.getMeta(count, page, limit),
+      data: result.rows,
+      meta: PaginationHelper.getMeta(result.count, page, limit),
     };
   }
 
-  async findById(id) {
-    return await CategoryRepository.findById(id);
+  async getById(id) {
+    const category = await CategoryRepository.findById(id);
+
+    if (!category) {
+      throw new Error("Category not found");
+    }
+
+    return category;
   }
 
   async create(payload) {
     payload.slug = SlugHelper.generate(payload.name);
 
-    return await CategoryRepository.create(payload);
+    const exist = await CategoryRepository.findBySlug(payload.slug);
+
+    if (exist) {
+      throw new Error("Category already exists");
+    }
+
+    return CategoryRepository.create(payload);
   }
 
   async update(id, payload) {
@@ -36,9 +53,15 @@ class CategoryService {
 
     if (payload.name) {
       payload.slug = SlugHelper.generate(payload.name);
+
+      const exist = await CategoryRepository.findBySlug(payload.slug);
+
+      if (exist && Number(exist.id) !== Number(id)) {
+        throw new Error("Category already exists");
+      }
     }
 
-    return await CategoryRepository.update(category, payload);
+    return CategoryRepository.update(id, payload);
   }
 
   async delete(id) {
@@ -48,7 +71,9 @@ class CategoryService {
       throw new Error("Category not found");
     }
 
-    return await CategoryRepository.delete(category);
+    await CategoryRepository.delete(id);
+
+    return true;
   }
 }
 

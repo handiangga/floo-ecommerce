@@ -77,7 +77,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "ProductImage",
       tableName: "ProductImages",
       timestamps: true,
-      underscored: true,
     },
   );
 

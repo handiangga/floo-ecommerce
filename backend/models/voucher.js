@@ -123,7 +123,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "Voucher",
       tableName: "Vouchers",
       timestamps: true,
-      underscored: true,
 
       hooks: {
         beforeValidate(voucher) {

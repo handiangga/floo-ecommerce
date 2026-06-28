@@ -1,5 +1,4 @@
 const AuthService = require("../services/auth.service");
-
 const ResponseHelper = require("../helpers/response.helper");
 
 class AuthController {
@@ -17,7 +16,21 @@ class AuthController {
     try {
       const user = await AuthService.profile(req.user.id);
 
-      return ResponseHelper.success(res, user);
+      return ResponseHelper.success(
+        res,
+        user,
+        "Profile retrieved successfully",
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async logout(req, res, next) {
+    try {
+      await AuthService.logout();
+
+      return ResponseHelper.success(res, null, "Logout success");
     } catch (err) {
       next(err);
     }

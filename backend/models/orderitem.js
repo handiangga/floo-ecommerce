@@ -100,7 +100,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "OrderItem",
       tableName: "OrderItems",
       timestamps: true,
-      underscored: true,
 
       hooks: {
         beforeValidate(orderItem) {

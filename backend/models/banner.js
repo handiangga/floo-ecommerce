@@ -120,7 +120,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "Banner",
       tableName: "Banners",
       timestamps: true,
-      underscored: true,
     },
   );
 
