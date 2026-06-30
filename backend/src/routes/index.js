@@ -27,14 +27,14 @@ router.use("/product-variants", require("./product-variant.route"));
 // ======================
 
 router.use("/customers", require("./customer.route"));
-// router.use("/addresses", require("./address.route"));
+router.use("/addresses", require("./address.route"));
 
 // ======================
 // SHOPPING
 // ======================
 
 // router.use("/cart", require("./cart.route"));
-// router.use("/wishlist", require("./wishlist.route"));
+router.use("/wishlist", require("./wishlist.route"));
 
 // ======================
 // ORDER

@@ -1,7 +1,6 @@
 "use strict";
 
 const { Model } = require("sequelize");
-const validator = require("validator");
 
 module.exports = (sequelize, DataTypes) => {
   class Address extends Model {
@@ -63,12 +62,13 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       label: {
-        type: DataTypes.STRING(50),
+        type: DataTypes.ENUM("HOME", "OFFICE", "OTHER"),
         allowNull: false,
-        defaultValue: "Rumah",
+        defaultValue: "HOME",
         validate: {
-          notEmpty: {
-            msg: "Label is required",
+          isIn: {
+            args: [["HOME", "OFFICE", "OTHER"]],
+            msg: "Invalid label",
           },
         },
       },
@@ -76,21 +76,41 @@ module.exports = (sequelize, DataTypes) => {
       province: {
         type: DataTypes.STRING(100),
         allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "Province is required",
+          },
+        },
       },
 
       city: {
         type: DataTypes.STRING(100),
         allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "City is required",
+          },
+        },
       },
 
       district: {
         type: DataTypes.STRING(100),
         allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "District is required",
+          },
+        },
       },
 
       subdistrict: {
         type: DataTypes.STRING(100),
         allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "Subdistrict is required",
+          },
+        },
       },
 
       postal_code: {
@@ -130,6 +150,23 @@ module.exports = (sequelize, DataTypes) => {
           min: -180,
           max: 180,
         },
+      },
+
+      status: {
+        type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+        allowNull: false,
+        defaultValue: "ACTIVE",
+        validate: {
+          isIn: {
+            args: [["ACTIVE", "INACTIVE"]],
+            msg: "Invalid status",
+          },
+        },
+      },
+
+      notes: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
 
       is_default: {

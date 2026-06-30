@@ -33,9 +33,9 @@ module.exports = {
       },
 
       label: {
-        type: Sequelize.STRING(50),
+        type: Sequelize.ENUM("HOME", "OFFICE", "OTHER"),
         allowNull: false,
-        defaultValue: "Rumah",
+        defaultValue: "HOME",
       },
 
       province: {
@@ -84,6 +84,17 @@ module.exports = {
         defaultValue: false,
       },
 
+      status: {
+        type: Sequelize.ENUM("ACTIVE", "INACTIVE"),
+        allowNull: false,
+        defaultValue: "ACTIVE",
+      },
+
+      notes: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -116,9 +127,21 @@ module.exports = {
     await queryInterface.addIndex("Addresses", ["customer_id", "is_default"], {
       name: "addresses_customer_default_idx",
     });
+
+    await queryInterface.addIndex("Addresses", ["status"], {
+      name: "addresses_status_idx",
+    });
   },
 
   async down(queryInterface) {
     await queryInterface.dropTable("Addresses");
+
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_Addresses_status";',
+    );
+
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_Addresses_label";',
+    );
   },
 };
