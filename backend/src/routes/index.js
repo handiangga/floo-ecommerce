@@ -4,12 +4,12 @@ const router = require("express").Router();
 // AUTH
 // ======================
 router.use("/auth", require("./auth.route"));
+router.use("/customer-auth", require("./customer-auth.route"));
 
 // ======================
 // MASTER
 // ======================
 router.use("/categories", require("./category.route"));
-
 router.use("/colors", require("./color.route"));
 router.use("/sizes", require("./size.route"));
 router.use("/banners", require("./banner.route"));
@@ -18,14 +18,15 @@ router.use("/vouchers", require("./voucher.route"));
 // ======================
 // PRODUCT
 // ======================
-
-// router.use("/products", require("./product.route"));
+router.use("/products", require("./product.route"));
+router.use("/product-images", require("./product-image.route"));
+router.use("/product-variants", require("./product-variant.route"));
 
 // ======================
 // CUSTOMER
 // ======================
 
-// router.use("/customers", require("./customer.route"));
+router.use("/customers", require("./customer.route"));
 // router.use("/addresses", require("./address.route"));
 
 // ======================

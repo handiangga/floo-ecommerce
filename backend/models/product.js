@@ -1,7 +1,6 @@
 "use strict";
 
 const { Model } = require("sequelize");
-const slugify = require("slugify");
 
 module.exports = (sequelize, DataTypes) => {
   class Product extends Model {
@@ -139,10 +138,22 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
 
-      featured: {
+      is_featured: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+      },
+
+      view_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+
+      sold_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
       },
 
       status: {
@@ -172,18 +183,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "Product",
       tableName: "Products",
       timestamps: true,
-
-      hooks: {
-        beforeValidate(product) {
-          if (product.name) {
-            product.slug = slugify(product.name, {
-              lower: true,
-              strict: true,
-              trim: true,
-            });
-          }
-        },
-      },
     },
   );
 

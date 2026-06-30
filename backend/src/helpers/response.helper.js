@@ -1,6 +1,6 @@
 class ResponseHelper {
   /**
-   * Success Response
+   * Success
    */
   static success(res, data = null, message = "Success", statusCode = 200) {
     return res.status(statusCode).json({
@@ -11,7 +11,7 @@ class ResponseHelper {
   }
 
   /**
-   * Success Response + Pagination
+   * Success + Pagination
    */
   static pagination(res, data, meta, message = "Success", statusCode = 200) {
     return res.status(statusCode).json({
@@ -23,7 +23,7 @@ class ResponseHelper {
   }
 
   /**
-   * Error Response
+   * Error
    */
   static error(
     res,
@@ -39,37 +39,30 @@ class ResponseHelper {
   }
 
   /**
-   * Created Response
+   * Created
    */
-  static created(res, data, message = "Created Successfully") {
+  static created(res, data, message = "Created successfully") {
     return this.success(res, data, message, 201);
   }
 
   /**
-   * Updated Response
+   * Updated
    */
-  static updated(res, data = null, message = "Updated Successfully") {
-    return this.success(res, data, message, 200);
+  static updated(res, data, message = "Updated successfully") {
+    return this.success(res, data, message);
   }
 
   /**
-   * Deleted Response
+   * Deleted
    */
-  static deleted(res, message = "Deleted Successfully") {
-    return this.success(res, null, message, 200);
-  }
-
-  /**
-   * No Content Response
-   */
-  static noContent(res) {
-    return res.status(204).send();
+  static deleted(res, message = "Deleted successfully") {
+    return this.success(res, null, message);
   }
 
   /**
    * Validation Error
    */
-  static validation(res, errors, message = "Validation Error") {
+  static validation(res, errors, message = "Validation error") {
     return this.error(res, message, 422, errors);
   }
 
@@ -90,7 +83,7 @@ class ResponseHelper {
   /**
    * Not Found
    */
-  static notFound(res, message = "Data Not Found") {
+  static notFound(res, message = "Data not found") {
     return this.error(res, message, 404);
   }
 
@@ -99,6 +92,20 @@ class ResponseHelper {
    */
   static conflict(res, message = "Conflict") {
     return this.error(res, message, 409);
+  }
+
+  /**
+   * Bad Request
+   */
+  static badRequest(res, message = "Bad request", errors = null) {
+    return this.error(res, message, 400, errors);
+  }
+
+  /**
+   * Too Many Requests
+   */
+  static tooManyRequests(res, message = "Too many requests") {
+    return this.error(res, message, 429);
   }
 }
 

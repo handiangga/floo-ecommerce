@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-const { User, Role } = require("../../models");
+const { Customer } = require("../../models");
 
 const ResponseHelper = require("../helpers/response.helper");
 
@@ -20,27 +20,21 @@ module.exports = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (decoded.type !== "ADMIN") {
-      return ResponseHelper.unauthorized(res, "Invalid admin token");
+    if (decoded.type !== "CUSTOMER") {
+      return ResponseHelper.unauthorized(res, "Invalid customer token");
     }
 
-    const user = await User.findByPk(decoded.id, {
-      include: [
-        {
-          model: Role,
-          as: "role",
-        },
-      ],
+    const customer = await Customer.findByPk(decoded.id, {
       attributes: {
         exclude: ["password"],
       },
     });
 
-    if (!user) {
-      return ResponseHelper.unauthorized(res, "User not found");
+    if (!customer) {
+      return ResponseHelper.unauthorized(res, "Customer not found");
     }
 
-    req.user = user;
+    req.customer = customer;
 
     next();
   } catch (error) {

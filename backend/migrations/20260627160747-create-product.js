@@ -73,10 +73,22 @@ module.exports = {
         defaultValue: 0,
       },
 
-      featured: {
+      is_featured: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+      },
+
+      view_count: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+
+      sold_count: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
       },
 
       status: {
@@ -130,7 +142,7 @@ module.exports = {
       name: "products_status_idx",
     });
 
-    await queryInterface.addIndex("Products", ["featured"], {
+    await queryInterface.addIndex("Products", ["is_featured"], {
       name: "products_featured_idx",
     });
 
@@ -142,8 +154,19 @@ module.exports = {
       name: "products_created_at_idx",
     });
 
-    await queryInterface.addIndex("Products", ["status", "featured"], {
+    await queryInterface.addIndex("Products", ["status", "is_featured"], {
       name: "products_status_featured_idx",
+    });
+    await queryInterface.addIndex("Products", ["view_count"], {
+      name: "products_view_count_idx",
+    });
+
+    await queryInterface.addIndex("Products", ["sold_count"], {
+      name: "products_sold_count_idx",
+    });
+
+    await queryInterface.addIndex("Products", ["slug"], {
+      name: "products_slug_idx",
     });
   },
 

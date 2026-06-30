@@ -43,6 +43,12 @@ module.exports = {
         allowNull: true,
       },
 
+      is_primary: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+
       sort_order: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -76,6 +82,10 @@ module.exports = {
 
     await queryInterface.addIndex("ProductImages", ["product_id", "color_id"], {
       name: "product_images_product_color_idx",
+    });
+
+    await queryInterface.addIndex("ProductImages", ["is_primary"], {
+      name: "product_images_primary_idx",
     });
   },
 

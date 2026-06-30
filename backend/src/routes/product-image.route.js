@@ -1,0 +1,28 @@
+const router = require("express").Router();
+
+const ProductImageController = require("../controllers/product-image.controller");
+
+const authentication = require("../middlewares/authentication");
+const authorization = require("../middlewares/authorization");
+const validation = require("../middlewares/validation");
+
+const ProductImageValidation = require("../validations/product-image.validation");
+
+router.get("/:productId", ProductImageController.index);
+
+router.post(
+  "/",
+  authentication,
+  authorization("OWNER", "ADMIN"),
+  validation(ProductImageValidation.create),
+  ProductImageController.store,
+);
+
+router.delete(
+  "/:id",
+  authentication,
+  authorization("OWNER", "ADMIN"),
+  ProductImageController.destroy,
+);
+
+module.exports = router;

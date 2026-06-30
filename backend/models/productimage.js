@@ -60,6 +60,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
+      is_primary: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+
       sort_order: {
         type: DataTypes.INTEGER,
         allowNull: false,

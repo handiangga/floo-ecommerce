@@ -21,6 +21,7 @@ class AuthService {
       {
         id: user.id,
         role: user.role.name,
+        type: "ADMIN",
       },
       process.env.JWT_SECRET,
       {
