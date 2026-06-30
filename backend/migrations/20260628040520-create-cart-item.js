@@ -38,6 +38,16 @@ module.exports = {
         allowNull: false,
         defaultValue: 1,
       },
+      price: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      selected: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+      },
 
       createdAt: {
         type: Sequelize.DATE,
@@ -72,6 +82,10 @@ module.exports = {
 
     await queryInterface.addIndex("CartItems", ["product_variant_id"], {
       name: "cart_items_variant_idx",
+    });
+
+    await queryInterface.addIndex("CartItems", ["selected"], {
+      name: "cart_items_selected_idx",
     });
 
     await queryInterface.addIndex(

@@ -33,7 +33,7 @@ router.use("/addresses", require("./address.route"));
 // SHOPPING
 // ======================
 
-// router.use("/cart", require("./cart.route"));
+router.use("/cart", require("./cart.route"));
 router.use("/wishlist", require("./wishlist.route"));
 
 // ======================

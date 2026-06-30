@@ -59,10 +59,30 @@ module.exports = (sequelize, DataTypes) => {
             args: [1],
             msg: "Minimum quantity is 1",
           },
+          max: {
+            args: [999],
+            msg: "Maximum quantity is 999",
+          },
           isInt: {
             msg: "Quantity must be an integer",
           },
         },
+      },
+      price: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        validate: {
+          min: {
+            args: [0],
+            msg: "Price cannot be negative",
+          },
+        },
+      },
+      selected: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
       },
     },
     {
