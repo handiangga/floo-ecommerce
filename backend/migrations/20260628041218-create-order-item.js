@@ -33,6 +33,37 @@ module.exports = {
         onDelete: "RESTRICT",
       },
 
+      sku: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+      },
+
+      product_name: {
+        type: Sequelize.STRING(255),
+        allowNull: false,
+      },
+
+      product_image: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+
+      color_name: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+      },
+
+      size_name: {
+        type: Sequelize.STRING(50),
+        allowNull: false,
+      },
+
+      weight: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+
       price: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -74,6 +105,10 @@ module.exports = {
 
     await queryInterface.addIndex("OrderItems", ["product_variant_id"], {
       name: "order_items_variant_idx",
+    });
+
+    await queryInterface.addIndex("OrderItems", ["sku"], {
+      name: "order_items_sku_idx",
     });
 
     await queryInterface.addIndex(

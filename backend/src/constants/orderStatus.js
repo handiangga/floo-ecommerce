@@ -1,7 +1,19 @@
-module.exports = {
-  PENDING: "PENDING",
+const ORDER_STATUS = Object.freeze({
+  WAITING_PAYMENT: "WAITING_PAYMENT",
+
+  PAID: "PAID",
+
   PROCESS: "PROCESS",
+
   SHIPPED: "SHIPPED",
+
   COMPLETED: "COMPLETED",
+
   CANCELLED: "CANCELLED",
-};
+
+  EXPIRED: "EXPIRED",
+
+  REFUNDED: "REFUNDED",
+});
+
+module.exports = ORDER_STATUS;

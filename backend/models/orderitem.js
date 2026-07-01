@@ -50,6 +50,63 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
 
+      sku: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "SKU is required",
+          },
+        },
+      },
+
+      product_name: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "Product name is required",
+          },
+        },
+      },
+
+      product_image: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      color_name: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "Color name is required",
+          },
+        },
+      },
+
+      size_name: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "Size name is required",
+          },
+        },
+      },
+
+      weight: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        validate: {
+          min: {
+            args: [0],
+            msg: "Weight cannot be negative",
+          },
+        },
+      },
+
       price: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -57,7 +114,7 @@ module.exports = (sequelize, DataTypes) => {
         validate: {
           min: {
             args: [0],
-            msg: "Price must be greater than or equal to 0",
+            msg: "Price cannot be negative",
           },
           isInt: {
             msg: "Price must be an integer",
@@ -87,7 +144,7 @@ module.exports = (sequelize, DataTypes) => {
         validate: {
           min: {
             args: [0],
-            msg: "Subtotal must be greater than or equal to 0",
+            msg: "Subtotal cannot be negative",
           },
           isInt: {
             msg: "Subtotal must be an integer",
