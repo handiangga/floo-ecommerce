@@ -1,13 +1,15 @@
-const PAYMENT_METHOD = Object.freeze({
+"use strict";
+
+const PAYMENT_METHOD = {
   BANK_TRANSFER: "BANK_TRANSFER",
 
   QRIS: "QRIS",
 
-  E_WALLET: "E_WALLET",
-
-  CREDIT_CARD: "CREDIT_CARD",
-
   COD: "COD",
-});
+
+  MIDTRANS: "MIDTRANS",
+
+  XENDIT: "XENDIT",
+};
 
 module.exports = PAYMENT_METHOD;

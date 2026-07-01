@@ -35,7 +35,7 @@ module.exports = {
       },
 
       provider: {
-        type: Sequelize.STRING(50),
+        type: Sequelize.ENUM("MIDTRANS", "XENDIT", "MANUAL"),
         allowNull: false,
         defaultValue: "MIDTRANS",
       },
@@ -47,12 +47,17 @@ module.exports = {
       },
 
       snap_token: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.STRING(500),
         allowNull: true,
       },
 
       payment_url: {
         type: Sequelize.TEXT,
+        allowNull: true,
+      },
+
+      webhook_payload: {
+        type: Sequelize.JSONB,
         allowNull: true,
       },
 
@@ -62,6 +67,7 @@ module.exports = {
           "PAID",
           "FAILED",
           "EXPIRED",
+          "CANCELLED",
           "REFUNDED",
         ),
         allowNull: false,
@@ -73,8 +79,24 @@ module.exports = {
         allowNull: true,
       },
 
+      amount: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+
+      payment_code: {
+        type: Sequelize.STRING(100),
+        allowNull: true,
+      },
+
       expired_at: {
         type: Sequelize.DATE,
+        allowNull: true,
+      },
+
+      notes: {
+        type: Sequelize.TEXT,
         allowNull: true,
       },
 
@@ -110,6 +132,19 @@ module.exports = {
     await queryInterface.addIndex("Payments", ["provider"], {
       name: "payments_provider_idx",
     });
+    await queryInterface.addIndex("Payments", ["method"], {
+      name: "payments_method_idx",
+    });
+    await queryInterface.addIndex("Payments", ["payment_code"], {
+      name: "payments_code_idx",
+    });
+
+    await queryInterface.addIndex("Payments", ["paid_at"], {
+      name: "payments_paid_at_idx",
+    });
+    await queryInterface.addIndex("Payments", ["expired_at"], {
+      name: "payments_expired_at_idx",
+    });
   },
 
   async down(queryInterface) {
@@ -121,6 +156,9 @@ module.exports = {
 
     await queryInterface.sequelize.query(
       'DROP TYPE IF EXISTS "enum_Payments_status";',
+    );
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_Payments_provider";',
     );
   },
 };

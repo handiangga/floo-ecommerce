@@ -53,9 +53,10 @@ class VoucherRepository {
     return Voucher.create(payload);
   }
 
-  async update(id, payload) {
+  async update(id, payload, transaction = null) {
     await Voucher.update(payload, {
       where: { id },
+      transaction,
     });
 
     return this.findById(id);

@@ -28,11 +28,12 @@ class CartItemRepository {
     });
   }
 
-  async clear(cart_id) {
+  async clear(cart_id, transaction = null) {
     return CartItem.destroy({
       where: {
         cart_id,
       },
+      transaction,
     });
   }
 

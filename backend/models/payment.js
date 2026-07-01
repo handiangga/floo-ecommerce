@@ -49,7 +49,7 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       provider: {
-        type: DataTypes.STRING(50),
+        type: DataTypes.ENUM("MIDTRANS", "XENDIT", "MANUAL"),
         allowNull: false,
         defaultValue: "MIDTRANS",
       },
@@ -58,14 +58,28 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: true,
         unique: true,
+        validate: {
+          len: {
+            args: [1, 100],
+            msg: "Invalid transaction id",
+          },
+        },
       },
 
       snap_token: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.STRING(500),
         allowNull: true,
       },
 
       payment_url: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      webhook_payload: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      },
+      notes: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
@@ -76,6 +90,7 @@ module.exports = (sequelize, DataTypes) => {
           PAYMENT_STATUS.PAID,
           PAYMENT_STATUS.FAILED,
           PAYMENT_STATUS.EXPIRED,
+          PAYMENT_STATUS.CANCELLED,
           PAYMENT_STATUS.REFUNDED,
         ),
         allowNull: false,
@@ -90,6 +105,30 @@ module.exports = (sequelize, DataTypes) => {
       expired_at: {
         type: DataTypes.DATE,
         allowNull: true,
+      },
+      amount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        validate: {
+          min: {
+            args: [0],
+            msg: "Amount cannot be negative",
+          },
+          isInt: {
+            msg: "Amount must be an integer",
+          },
+        },
+      },
+      payment_code: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        validate: {
+          len: {
+            args: [1, 100],
+            msg: "Invalid payment code",
+          },
+        },
       },
     },
     {

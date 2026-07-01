@@ -150,11 +150,10 @@ class ProductVariantRepository {
     return ProductVariant.create(payload);
   }
 
-  async update(id, payload) {
+  async update(id, payload, transaction = null) {
     await ProductVariant.update(payload, {
-      where: {
-        id,
-      },
+      where: { id },
+      transaction,
     });
 
     return this.findById(id);
