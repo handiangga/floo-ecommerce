@@ -1,7 +1,11 @@
-const { ProductVariant, Product, Color, Size } = require("../../models");
-
-const { Op } = require("sequelize");
-
+const {
+  ProductVariant,
+  Product,
+  Color,
+  Size,
+  sequelize,
+} = require("../../models");
+const { Op, Transaction } = require("sequelize");
 class ProductVariantRepository {
   async findAll({
     limit,
@@ -74,7 +78,16 @@ class ProductVariantRepository {
     });
   }
 
-  async findById(id) {
+  async findById(id, transaction = null, lock = false) {
+    const variant = await ProductVariant.findByPk(id, {
+      transaction,
+      lock: lock ? Transaction.LOCK.UPDATE : undefined,
+    });
+
+    if (!variant) {
+      return null;
+    }
+
     return ProductVariant.findByPk(id, {
       include: [
         {
@@ -90,6 +103,7 @@ class ProductVariantRepository {
           as: "size",
         },
       ],
+      transaction,
     });
   }
 
@@ -152,11 +166,13 @@ class ProductVariantRepository {
 
   async update(id, payload, transaction = null) {
     await ProductVariant.update(payload, {
-      where: { id },
+      where: {
+        id,
+      },
       transaction,
     });
 
-    return this.findById(id);
+    return this.findById(id, transaction);
   }
 
   async delete(id) {
@@ -165,6 +181,48 @@ class ProductVariantRepository {
         id,
       },
     });
+  }
+  async decreaseStock(id, qty, transaction) {
+    const variant = await this.findById(id, transaction, true);
+
+    if (!variant) {
+      throw new Error("Product variant not found");
+    }
+
+    if (variant.stock < qty) {
+      throw new Error(
+        `${variant.product.name} (${variant.color.name}/${variant.size.name}) stock is insufficient`,
+      );
+    }
+
+    await variant.update(
+      {
+        stock: variant.stock - qty,
+      },
+      {
+        transaction,
+      },
+    );
+
+    return variant;
+  }
+  async increaseStock(id, qty, transaction) {
+    const variant = await this.findById(id, transaction, true);
+
+    if (!variant) {
+      throw new Error("Product variant not found");
+    }
+
+    await variant.update(
+      {
+        stock: variant.stock + qty,
+      },
+      {
+        transaction,
+      },
+    );
+
+    return variant;
   }
 }
 

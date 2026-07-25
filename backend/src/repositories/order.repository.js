@@ -65,7 +65,7 @@ class OrderRepository {
         },
         {
           model: Address,
-          as: "address",
+          as: "customerAddress",
         },
         {
           model: Voucher,
@@ -87,7 +87,7 @@ class OrderRepository {
     });
   }
 
-  async findById(id) {
+  async findById(id, transaction = null) {
     return Order.findByPk(id, {
       include: [
         {
@@ -99,7 +99,7 @@ class OrderRepository {
         },
         {
           model: Address,
-          as: "address",
+          as: "customerAddress",
         },
         {
           model: Voucher,
@@ -124,6 +124,7 @@ class OrderRepository {
           ],
         },
       ],
+      transaction,
     });
   }
 
@@ -164,7 +165,7 @@ class OrderRepository {
       transaction,
     });
 
-    return this.findById(id);
+    return this.findById(id, transaction);
   }
 
   async delete(id, transaction = null) {

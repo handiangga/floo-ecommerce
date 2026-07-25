@@ -42,7 +42,7 @@ router.use("/wishlist", require("./wishlist.route"));
 
 router.use("/orders", require("./order.route"));
 router.use("/payments", require("./payment.route"));
-// router.use("/shipments", require("./shipment.route"));
+router.use("/shipments", require("./shipment.route"));
 
 router.get("/health", (req, res) => {
   res.json({

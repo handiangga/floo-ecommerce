@@ -27,14 +27,14 @@ module.exports = (sequelize, DataTypes) => {
       });
 
       ProductVariant.hasMany(models.CartItem, {
-        foreignKey: "variant_id",
+        foreignKey: "product_variant_id",
         as: "cartItems",
         onUpdate: "CASCADE",
         onDelete: "RESTRICT",
       });
 
       ProductVariant.hasMany(models.OrderItem, {
-        foreignKey: "variant_id",
+        foreignKey: "product_variant_id",
         as: "orderItems",
         onUpdate: "CASCADE",
         onDelete: "RESTRICT",

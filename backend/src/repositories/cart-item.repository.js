@@ -27,7 +27,15 @@ class CartItemRepository {
       where: { id },
     });
   }
-
+  async deleteSelected(cart_id, transaction) {
+    return CartItem.destroy({
+      where: {
+        cart_id,
+        selected: true,
+      },
+      transaction,
+    });
+  }
   async clear(cart_id, transaction = null) {
     return CartItem.destroy({
       where: {
@@ -39,6 +47,15 @@ class CartItemRepository {
 
   async findById(id) {
     return CartItem.findByPk(id);
+  }
+  static async deleteSelected(cart_id, transaction) {
+    return CartItem.destroy({
+      where: {
+        cart_id,
+        selected: true,
+      },
+      transaction,
+    });
   }
 }
 

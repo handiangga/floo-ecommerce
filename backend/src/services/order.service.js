@@ -76,10 +76,17 @@ class OrderService {
       let subtotal = 0;
 
       const orderItems = [];
+      const selectedItems = cart.items.filter((item) => item.selected);
 
-      for (const item of cart.items) {
+      if (selectedItems.length === 0) {
+        throw new Error("No selected item");
+      }
+
+      for (const item of selectedItems) {
         const variant = await ProductVariantRepository.findById(
           item.product_variant_id,
+          transaction,
+          true,
         );
 
         if (!variant) {
@@ -102,13 +109,16 @@ class OrderService {
           product_variant_id: variant.id,
           sku: variant.sku,
           product_name: variant.product.name,
+          product_image: variant.image,
           color_name: variant.color.name,
           size_name: variant.size.name,
+          weight: variant.weight,
           price,
           qty: item.qty,
           subtotal: lineSubtotal,
         });
       }
+
       let discount = 0;
       let voucher = null;
 
@@ -236,17 +246,14 @@ class OrderService {
       }));
 
       await OrderItemRepository.bulkCreate(items, transaction);
+      if (selectedItems.length === 0) {
+        throw new Error("No selected item");
+      }
 
       for (const item of orderItems) {
-        const variant = await ProductVariantRepository.findById(
+        await ProductVariantRepository.decreaseStock(
           item.product_variant_id,
-        );
-
-        await ProductVariantRepository.update(
-          variant.id,
-          {
-            stock: variant.stock - item.qty,
-          },
+          item.qty,
           transaction,
         );
       }
@@ -261,93 +268,215 @@ class OrderService {
         );
       }
 
-      await CartItemRepository.clear(cart.id, transaction);
-
+      await CartItemRepository.deleteSelected(cart.id, transaction);
       await transaction.commit();
 
       return await OrderRepository.findById(order.id);
     } catch (error) {
-      await transaction.rollback();
+      console.error(error);
+
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
+
       throw error;
     }
   }
 
   async cancel(id) {
-    const order = await OrderRepository.findById(id);
+    const transaction = await sequelize.transaction();
 
-    if (!order) {
-      throw new Error("Order not found");
-    }
-    if (
-      order.status === ORDER_STATUS.CANCELLED ||
-      order.status === ORDER_STATUS.COMPLETED
-    ) {
-      throw new Error("Order cannot be cancelled");
-    }
-    if (order.status !== ORDER_STATUS.WAITING_PAYMENT) {
-      throw new Error("Order cannot be cancelled");
-    }
+    try {
+      const order = await OrderRepository.findById(id);
 
-    for (const item of order.items) {
-      const variant = await ProductVariantRepository.findById(
-        item.product_variant_id,
+      if (!order) {
+        throw new Error("Order not found");
+      }
+
+      if (
+        order.status === ORDER_STATUS.CANCELLED ||
+        order.status === ORDER_STATUS.COMPLETED
+      ) {
+        throw new Error("Order cannot be cancelled");
+      }
+
+      if (order.status !== ORDER_STATUS.WAITING_PAYMENT) {
+        throw new Error("Order cannot be cancelled");
+      }
+
+      // Kembalikan stock
+      for (const item of order.items) {
+        await ProductVariantRepository.increaseStock(
+          item.product_variant_id,
+          item.qty,
+          transaction,
+        );
+      }
+
+      // Kembalikan kuota voucher
+      if (order.voucher_id) {
+        const voucher = await VoucherRepository.findById(order.voucher_id);
+
+        if (voucher && voucher.used > 0) {
+          await VoucherRepository.update(
+            voucher.id,
+            {
+              used: voucher.used - 1,
+            },
+            transaction,
+          );
+        }
+      }
+
+      // Update status order
+      await OrderRepository.update(
+        id,
+        {
+          status: ORDER_STATUS.CANCELLED,
+          cancelled_at: new Date(),
+        },
+        transaction,
       );
 
-      await ProductVariantRepository.update(variant.id, {
-        stock: variant.stock + item.qty,
-      });
-    }
+      await transaction.commit();
 
-    if (order.voucher_id) {
-      const voucher = await VoucherRepository.findById(order.voucher_id);
+      return await OrderRepository.findById(id);
+    } catch (error) {
+      console.error(error);
 
-      if (voucher && voucher.used > 0) {
-        await VoucherRepository.update(voucher.id, {
-          used: voucher.used - 1,
-        });
+      if (!transaction.finished) {
+        await transaction.rollback();
       }
-    }
 
-    return OrderRepository.update(id, {
-      status: ORDER_STATUS.CANCELLED,
-      cancelled_at: new Date(),
-    });
+      throw error;
+    }
   }
 
-  async updateStatus(id, status) {
+  async updateStatus(id, data) {
+    const { status, tracking_number, courier_service, shipping_method } = data;
     if (!Object.values(ORDER_STATUS).includes(status)) {
       throw new Error("Invalid order status");
     }
 
+    const transaction = await sequelize.transaction();
+
+    try {
+      const order = await OrderRepository.findById(id);
+
+      if (!order) {
+        throw new Error("Order not found");
+      }
+
+      const allowedTransitions = {
+        [ORDER_STATUS.WAITING_PAYMENT]: [
+          ORDER_STATUS.PAID,
+          ORDER_STATUS.CANCELLED,
+        ],
+
+        [ORDER_STATUS.PAID]: [ORDER_STATUS.PROCESSING, ORDER_STATUS.CANCELLED],
+
+        [ORDER_STATUS.PROCESSING]: [ORDER_STATUS.SHIPPED],
+
+        [ORDER_STATUS.SHIPPED]: [ORDER_STATUS.COMPLETED],
+
+        [ORDER_STATUS.COMPLETED]: [ORDER_STATUS.REFUNDED],
+
+        [ORDER_STATUS.CANCELLED]: [],
+
+        [ORDER_STATUS.REFUNDED]: [],
+      };
+
+      const allowed = allowedTransitions[order.status] || [];
+
+      if (!allowed.includes(status)) {
+        throw new Error(
+          `Cannot change status from ${order.status} to ${status}`,
+        );
+      }
+
+      const updatePayload = {
+        status,
+      };
+
+      switch (status) {
+        case ORDER_STATUS.PAID:
+          updatePayload.paid_at = new Date();
+          break;
+
+        case ORDER_STATUS.PROCESSING:
+          updatePayload.processing_at = new Date();
+          break;
+
+        case ORDER_STATUS.SHIPPED:
+          updatePayload.shipped_at = new Date();
+
+          updatePayload.tracking_number = tracking_number;
+          updatePayload.courier_service = courier_service;
+          updatePayload.shipping_method = shipping_method;
+
+          break;
+
+        case ORDER_STATUS.COMPLETED:
+          updatePayload.completed_at = new Date();
+          break;
+
+        case ORDER_STATUS.REFUNDED:
+          updatePayload.refunded_at = new Date();
+          break;
+
+        case ORDER_STATUS.CANCELLED:
+          for (const item of order.items) {
+            await ProductVariantRepository.increaseStock(
+              item.product_variant_id,
+              item.qty,
+              transaction,
+            );
+          }
+
+          if (order.voucher_id) {
+            const voucher = await VoucherRepository.findById(order.voucher_id);
+
+            if (voucher && voucher.used > 0) {
+              await VoucherRepository.update(
+                voucher.id,
+                {
+                  used: voucher.used - 1,
+                },
+                transaction,
+              );
+            }
+          }
+
+          updatePayload.cancelled_at = new Date();
+          break;
+      }
+      await OrderRepository.update(id, updatePayload, transaction);
+
+      await transaction.commit();
+
+      return await OrderRepository.findById(id);
+    } catch (error) {
+      console.error(error);
+
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
+
+      throw error;
+    }
+  }
+  async getMyOrderDetail(customer_id, id) {
     const order = await OrderRepository.findById(id);
 
     if (!order) {
       throw new Error("Order not found");
     }
 
-    const payload = {
-      status,
-    };
-
-    switch (status) {
-      case ORDER_STATUS.PAID:
-        payload.paid_at = new Date();
-        break;
-
-      case ORDER_STATUS.COMPLETED:
-        payload.completed_at = new Date();
-        break;
-
-      case ORDER_STATUS.REFUNDED:
-        payload.refunded_at = new Date();
-        break;
-
-      case ORDER_STATUS.CANCELLED:
-        payload.cancelled_at = new Date();
-        break;
+    if (String(order.customer_id) !== String(customer_id)) {
+      throw new Error("Forbidden");
     }
 
-    return OrderRepository.update(id, payload);
+    return order;
   }
 }
 

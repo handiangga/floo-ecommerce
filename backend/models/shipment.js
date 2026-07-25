@@ -60,6 +60,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: true,
         unique: true,
+        validate: {
+          len: [1, 100],
+        },
       },
 
       shipping_cost: {
@@ -84,9 +87,35 @@ module.exports = (sequelize, DataTypes) => {
           SHIPMENT_STATUS.SHIPPED,
           SHIPMENT_STATUS.DELIVERED,
           SHIPMENT_STATUS.RETURNED,
+          SHIPMENT_STATUS.FAILED,
         ),
         allowNull: false,
         defaultValue: SHIPMENT_STATUS.PENDING,
+      },
+
+      estimated_delivery: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+
+      weight: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        validate: {
+          min: {
+            args: [0],
+            msg: "Weight cannot be negative",
+          },
+          isInt: {
+            msg: "Weight must be an integer",
+          },
+        },
+      },
+
+      notes: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
 
       shipped_at: {

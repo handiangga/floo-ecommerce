@@ -3,7 +3,7 @@ const ORDER_STATUS = Object.freeze({
 
   PAID: "PAID",
 
-  PROCESS: "PROCESS",
+  PROCESSING: "PROCESSING",
 
   SHIPPED: "SHIPPED",
 

@@ -52,9 +52,26 @@ module.exports = {
           "SHIPPED",
           "DELIVERED",
           "RETURNED",
+          "FAILED",
         ),
         allowNull: false,
         defaultValue: "PENDING",
+      },
+
+      weight: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+
+      estimated_delivery: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+
+      notes: {
+        type: Sequelize.TEXT,
+        allowNull: true,
       },
 
       shipped_at: {
@@ -84,20 +101,32 @@ module.exports = {
     // INDEX
     // ===========================
 
-    await queryInterface.addIndex("Shipments", ["order_id"], {
-      name: "shipments_order_idx",
-    });
-
-    await queryInterface.addIndex("Shipments", ["tracking_number"], {
-      name: "shipments_tracking_idx",
-    });
-
     await queryInterface.addIndex("Shipments", ["status"], {
       name: "shipments_status_idx",
     });
 
     await queryInterface.addIndex("Shipments", ["courier"], {
       name: "shipments_courier_idx",
+    });
+
+    await queryInterface.addIndex("Shipments", ["courier", "tracking_number"], {
+      name: "shipments_courier_tracking_idx",
+    });
+
+    await queryInterface.addIndex("Shipments", ["status", "shipped_at"], {
+      name: "shipments_status_shipped_idx",
+    });
+
+    await queryInterface.addIndex("Shipments", ["shipped_at"], {
+      name: "shipments_shipped_at_idx",
+    });
+
+    await queryInterface.addIndex("Shipments", ["delivered_at"], {
+      name: "shipments_delivered_at_idx",
+    });
+
+    await queryInterface.addIndex("Shipments", ["createdAt"], {
+      name: "shipments_created_idx",
     });
   },
 

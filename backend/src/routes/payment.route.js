@@ -4,7 +4,7 @@ const router = require("express").Router();
 
 const PaymentController = require("../controllers/payment.controller");
 
-const validate = require("../middlewares/validation.middleware");
+const validate = require("../middlewares/validation.js");
 
 const {
   createPaymentSchema,

@@ -1,7 +1,10 @@
+"use strict";
+
 module.exports = {
   PENDING: "PENDING",
   PICKED: "PICKED",
   SHIPPED: "SHIPPED",
   DELIVERED: "DELIVERED",
   RETURNED: "RETURNED",
+  FAILED: "FAILED",
 };

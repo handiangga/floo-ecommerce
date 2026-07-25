@@ -34,18 +34,32 @@ class OrderValidation {
       .valid(
         "WAITING_PAYMENT",
         "PAID",
-        "PROCESS",
+        "PROCESSING",
         "SHIPPED",
         "COMPLETED",
         "CANCELLED",
         "EXPIRED",
         "REFUNDED",
       )
-      .required()
-      .messages({
-        "any.required": "Status is required",
-        "any.only": "Invalid status",
+      .required(),
+
+    tracking_number: Joi.string()
+      .max(100)
+      .when("status", {
+        is: "SHIPPED",
+        then: Joi.required(),
+        otherwise: Joi.allow("", null),
       }),
+
+    courier_service: Joi.string()
+      .max(100)
+      .when("status", {
+        is: "SHIPPED",
+        then: Joi.required(),
+        otherwise: Joi.allow("", null),
+      }),
+
+    shipping_method: Joi.string().max(100).allow("", null),
   });
 
   static getAll = Joi.object({
@@ -58,7 +72,7 @@ class OrderValidation {
     status: Joi.string().valid(
       "WAITING_PAYMENT",
       "PAID",
-      "PROCESS",
+      "PROCESSING",
       "SHIPPED",
       "COMPLETED",
       "CANCELLED",

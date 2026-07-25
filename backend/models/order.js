@@ -13,9 +13,11 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: "RESTRICT",
       });
 
+      // FIX: jangan gunakan alias "address"
+      // karena sudah ada field "address" di model Order
       Order.belongsTo(models.Address, {
         foreignKey: "address_id",
-        as: "address",
+        as: "customerAddress",
         onUpdate: "CASCADE",
         onDelete: "RESTRICT",
       });
@@ -246,7 +248,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM(
           ORDER_STATUS.WAITING_PAYMENT,
           ORDER_STATUS.PAID,
-          ORDER_STATUS.PROCESS,
+          ORDER_STATUS.PROCESSING,
           ORDER_STATUS.SHIPPED,
           ORDER_STATUS.COMPLETED,
           ORDER_STATUS.CANCELLED,
@@ -288,6 +290,16 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       paid_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+
+      processing_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+
+      shipped_at: {
         type: DataTypes.DATE,
         allowNull: true,
       },
