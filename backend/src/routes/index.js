@@ -44,6 +44,15 @@ router.use("/orders", require("./order.route"));
 router.use("/payments", require("./payment.route"));
 router.use("/shipments", require("./shipment.route"));
 
+// ======================
+// DASHBOARD
+// ======================
+
+router.use("/dashboard", require("./dashboard.route"));
+router.use("/reports", require("./report.route"));
+router.use("/review", require("./review.route"));
+router.use("/notifications", require("./notification.route"));
+
 router.get("/health", (req, res) => {
   res.json({
     success: true,

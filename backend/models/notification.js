@@ -2,14 +2,19 @@
 
 const { Model } = require("sequelize");
 
-const NOTIFICATION_TYPE = require("../src/constants/notificationType");
-
 module.exports = (sequelize, DataTypes) => {
   class Notification extends Model {
     static associate(models) {
       Notification.belongsTo(models.Customer, {
         foreignKey: "customer_id",
         as: "customer",
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
+      });
+
+      Notification.belongsTo(models.User, {
+        foreignKey: "user_id",
+        as: "user",
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       });
@@ -27,43 +32,33 @@ module.exports = (sequelize, DataTypes) => {
 
       customer_id: {
         type: DataTypes.BIGINT,
-        allowNull: false,
-        validate: {
-          notNull: {
-            msg: "Customer is required",
-          },
-        },
+        allowNull: true,
+      },
+
+      user_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
       },
 
       title: {
-        type: DataTypes.STRING(150),
+        type: DataTypes.STRING(255),
         allowNull: false,
-        validate: {
-          notEmpty: {
-            msg: "Title is required",
-          },
-        },
       },
 
       message: {
         type: DataTypes.TEXT,
         allowNull: false,
-        validate: {
-          notEmpty: {
-            msg: "Message is required",
-          },
-        },
       },
 
       type: {
         type: DataTypes.ENUM(
-          NOTIFICATION_TYPE.ORDER,
-          NOTIFICATION_TYPE.PAYMENT,
-          NOTIFICATION_TYPE.PROMOTION,
-          NOTIFICATION_TYPE.SYSTEM,
+          "ORDER",
+          "PAYMENT",
+          "SHIPMENT",
+          "PROMOTION",
+          "SYSTEM",
         ),
         allowNull: false,
-        defaultValue: NOTIFICATION_TYPE.SYSTEM,
       },
 
       is_read: {
@@ -72,8 +67,8 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false,
       },
 
-      read_at: {
-        type: DataTypes.DATE,
+      reference_id: {
+        type: DataTypes.BIGINT,
         allowNull: true,
       },
     },

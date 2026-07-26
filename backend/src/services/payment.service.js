@@ -66,11 +66,11 @@ class PaymentService {
       throw new Error("Payment already exists");
     }
 
-    return PaymentRepository.create(
+    const payment = await PaymentRepository.create(
       {
         order_id: order.id,
         method: payload.method,
-        provider: payload.provider || "MIDTRANS",
+        provider: payload.provider || "MANUAL",
         amount: order.total,
         payment_code: payload.payment_code,
         transaction_id: payload.transaction_id,
@@ -82,6 +82,16 @@ class PaymentService {
       },
       transaction,
     );
+
+    await OrderRepository.update(
+      order.id,
+      {
+        payment_method: payload.method,
+      },
+      transaction,
+    );
+
+    return payment;
   }
   async pay(id, payload = {}) {
     const payment = await PaymentRepository.findById(id);
@@ -104,7 +114,7 @@ class PaymentService {
 
     await PaymentRepository.update(id, {
       status: PAYMENT_STATUS.PAID,
-      paid_at: new Date(),
+      paid_at: payload.paid_at || new Date(),
       transaction_id: payload.transaction_id || payment.transaction_id,
       payment_code: payload.payment_code || payment.payment_code,
       snap_token: payload.snap_token || payment.snap_token,
@@ -114,7 +124,7 @@ class PaymentService {
 
     await OrderRepository.update(payment.order_id, {
       status: ORDER_STATUS.PAID,
-      paid_at: new Date(),
+      paid_at: payload.paid_at || new Date(),
     });
 
     return PaymentRepository.findById(id);
@@ -202,7 +212,8 @@ class PaymentService {
 
     return PaymentRepository.findById(id);
   }
-  async updateStatus(id, status, payload = {}) {
+  async updateStatus(id, payload = {}) {
+    const { status } = payload;
     const payment = await PaymentRepository.findById(id);
 
     if (!payment) {
@@ -228,6 +239,8 @@ class PaymentService {
         await PaymentRepository.update(id, {
           status: PAYMENT_STATUS.FAILED,
           webhook_payload: payload.webhook_payload,
+          failed_reason:
+            payload.failed_reason || payload.status_message || null,
         });
 
         return PaymentRepository.findById(id);
@@ -254,9 +267,9 @@ class PaymentService {
       refund: PAYMENT_STATUS.REFUNDED,
       deny: PAYMENT_STATUS.FAILED,
     };
+    const gatewayStatus = payload.transaction_status || payload.status;
 
-    const status = statusMap[payload.status] || payload.status;
-
+    const status = statusMap[gatewayStatus] || gatewayStatus;
     switch (status) {
       case PAYMENT_STATUS.PAID:
         return this.pay(payment.id, payload);
@@ -271,8 +284,10 @@ class PaymentService {
         return this.refund(payment.id);
 
       case PAYMENT_STATUS.FAILED:
-        return this.updateStatus(payment.id, PAYMENT_STATUS.FAILED, payload);
-
+        return this.updateStatus(payment.id, {
+          ...payload,
+          status: PAYMENT_STATUS.FAILED,
+        });
       default:
         return payment;
     }

@@ -37,7 +37,7 @@ module.exports = {
       provider: {
         type: Sequelize.ENUM("MIDTRANS", "XENDIT", "MANUAL"),
         allowNull: false,
-        defaultValue: "MIDTRANS",
+        defaultValue: "MANUAL",
       },
 
       transaction_id: {
@@ -88,6 +88,7 @@ module.exports = {
       payment_code: {
         type: Sequelize.STRING(100),
         allowNull: true,
+        unique: true,
       },
 
       expired_at: {
@@ -96,6 +97,20 @@ module.exports = {
       },
 
       notes: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      verified_by: {
+        type: Sequelize.BIGINT,
+        allowNull: true,
+      },
+
+      verified_at: {
+        type: Sequelize.DATE,
+        allowNull: true,
+      },
+
+      failed_reason: {
         type: Sequelize.TEXT,
         allowNull: true,
       },
@@ -145,9 +160,21 @@ module.exports = {
     await queryInterface.addIndex("Payments", ["expired_at"], {
       name: "payments_expired_at_idx",
     });
+    await queryInterface.addIndex("Payments", ["createdAt"], {
+      name: "payments_created_idx",
+    });
   },
 
   async down(queryInterface) {
+    await queryInterface.removeIndex("Payments", "payments_order_idx");
+    await queryInterface.removeIndex("Payments", "payments_status_idx");
+    await queryInterface.removeIndex("Payments", "payments_transaction_idx");
+    await queryInterface.removeIndex("Payments", "payments_provider_idx");
+    await queryInterface.removeIndex("Payments", "payments_method_idx");
+    await queryInterface.removeIndex("Payments", "payments_code_idx");
+    await queryInterface.removeIndex("Payments", "payments_paid_at_idx");
+    await queryInterface.removeIndex("Payments", "payments_expired_at_idx");
+
     await queryInterface.dropTable("Payments");
 
     await queryInterface.sequelize.query(

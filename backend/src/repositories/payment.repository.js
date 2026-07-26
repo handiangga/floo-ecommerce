@@ -58,7 +58,7 @@ class PaymentRepository {
     });
   }
 
-  async findById(id) {
+  async findById(id, transaction = null) {
     return Payment.findByPk(id, {
       include: [
         {
@@ -66,13 +66,27 @@ class PaymentRepository {
           as: "order",
         },
       ],
+      transaction,
     });
   }
 
-  async findByOrder(order_id) {
+  async findByOrder(order_id, transaction = null) {
+    return Payment.findOne({
+      where: { order_id },
+      include: [
+        {
+          model: Order,
+          as: "order",
+        },
+      ],
+      transaction,
+    });
+  }
+
+  async findByTransactionId(transaction_id, transaction = null) {
     return Payment.findOne({
       where: {
-        order_id,
+        transaction_id,
       },
       include: [
         {
@@ -80,26 +94,26 @@ class PaymentRepository {
           as: "order",
         },
       ],
+      transaction,
     });
   }
 
-  async findByTransactionId(transaction_id) {
-    return Payment.findOne({
-      where: {
-        transaction_id,
-      },
-    });
-  }
-
-  async findBySnapToken(snap_token) {
+  async findBySnapToken(snap_token, transaction = null) {
     return Payment.findOne({
       where: {
         snap_token,
       },
+      include: [
+        {
+          model: Order,
+          as: "order",
+        },
+      ],
+      transaction,
     });
   }
 
-  async findExpired() {
+  async findExpired(transaction = null) {
     return Payment.findAll({
       where: {
         status: "PENDING",
@@ -107,6 +121,7 @@ class PaymentRepository {
           [Op.lte]: new Date(),
         },
       },
+      transaction,
     });
   }
 
@@ -124,7 +139,20 @@ class PaymentRepository {
       transaction,
     });
 
-    return this.findById(id);
+    return this.findById(id, transaction);
+  }
+
+  async updateStatus(id, status, transaction = null) {
+    return this.update(id, { status }, transaction);
+  }
+
+  async findPending(transaction = null) {
+    return Payment.findAll({
+      where: {
+        status: "PENDING",
+      },
+      transaction,
+    });
   }
 
   async delete(id, transaction = null) {

@@ -130,6 +130,18 @@ module.exports = (sequelize, DataTypes) => {
           },
         },
       },
+      verified_by: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+      },
+      verified_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      failed_reason: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       sequelize,

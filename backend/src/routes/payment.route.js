@@ -4,32 +4,72 @@ const router = require("express").Router();
 
 const PaymentController = require("../controllers/payment.controller");
 
-const validate = require("../middlewares/validation.js");
+const validate = require("../middlewares/validation");
+const authentication = require("../middlewares/authentication");
+const customerAuthentication = require("../middlewares/customer-authentication");
 
 const {
   createPaymentSchema,
   updatePaymentStatusSchema,
 } = require("../validations/payment.validation");
 
-// Admin
-router.get("/", PaymentController.getAll);
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER
+|--------------------------------------------------------------------------
+*/
 
-router.get("/order/:order_id", PaymentController.getByOrder);
+router.get("/my", customerAuthentication, PaymentController.getMyPayments);
 
-router.get("/:id", PaymentController.getById);
+router.get(
+  "/my/:id",
+  customerAuthentication,
+  PaymentController.getMyPaymentDetail,
+);
 
-router.post("/", validate(createPaymentSchema), PaymentController.create);
+/*
+|--------------------------------------------------------------------------
+| ADMIN
+|--------------------------------------------------------------------------
+*/
+
+router.get("/", authentication, PaymentController.getAll);
+
+router.get("/order/:order_id", authentication, PaymentController.getByOrder);
+
+router.get("/:id", authentication, PaymentController.getById);
+
+// Sebenarnya endpoint ini bisa dihapus jika Payment
+// selalu dibuat otomatis saat Checkout.
+// Untuk sementara tetap disediakan.
+router.post(
+  "/",
+  authentication,
+  validate(createPaymentSchema),
+  PaymentController.create,
+);
 
 router.patch(
   "/:id/status",
+  authentication,
   validate(updatePaymentStatusSchema),
   PaymentController.updateStatus,
 );
 
-// Webhook
+/*
+|--------------------------------------------------------------------------
+| PAYMENT GATEWAY WEBHOOK
+|--------------------------------------------------------------------------
+*/
+
 router.post("/webhook", PaymentController.webhook);
 
-// Cron
+/*
+|--------------------------------------------------------------------------
+| CRON JOB
+|--------------------------------------------------------------------------
+*/
+
 router.post("/expire", PaymentController.expirePending);
 
 module.exports = router;

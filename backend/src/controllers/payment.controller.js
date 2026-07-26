@@ -1,10 +1,52 @@
 "use strict";
 
 const PaymentService = require("../services/payment.service");
-
 const ResponseHelper = require("../helpers/response.helper");
 
 class PaymentController {
+  // =====================================================
+  // CUSTOMER
+  // =====================================================
+
+  async getMyPayments(req, res) {
+    try {
+      const result = await PaymentService.getMyPayments(
+        req.customer.id,
+        req.query,
+      );
+
+      return ResponseHelper.pagination(
+        res,
+        result.data,
+        result.meta,
+        "Payments fetched successfully",
+      );
+    } catch (err) {
+      return ResponseHelper.badRequest(res, err.message);
+    }
+  }
+
+  async getMyPaymentDetail(req, res) {
+    try {
+      const payment = await PaymentService.getMyPaymentDetail(
+        req.params.id,
+        req.customer.id,
+      );
+
+      return ResponseHelper.success(
+        res,
+        payment,
+        "Payment fetched successfully",
+      );
+    } catch (err) {
+      return ResponseHelper.notFound(res, err.message);
+    }
+  }
+
+  // =====================================================
+  // ADMIN
+  // =====================================================
+
   async getAll(req, res) {
     try {
       const result = await PaymentService.getAll(req.query);
@@ -66,19 +108,22 @@ class PaymentController {
     try {
       const payment = await PaymentService.updateStatus(
         req.params.id,
-        req.body.status,
         req.body,
       );
 
       return ResponseHelper.updated(
         res,
         payment,
-        "Payment updated successfully",
+        "Payment status updated successfully",
       );
     } catch (err) {
       return ResponseHelper.badRequest(res, err.message);
     }
   }
+
+  // =====================================================
+  // PAYMENT GATEWAY
+  // =====================================================
 
   async webhook(req, res) {
     try {
@@ -94,16 +139,18 @@ class PaymentController {
     }
   }
 
+  // =====================================================
+  // CRON
+  // =====================================================
+
   async expirePending(req, res) {
     try {
       const total = await PaymentService.expirePendingPayments();
 
       return ResponseHelper.success(
         res,
-        {
-          total,
-        },
-        "Expired payment checked",
+        { total },
+        "Expired payment checked successfully",
       );
     } catch (err) {
       return ResponseHelper.badRequest(res, err.message);
