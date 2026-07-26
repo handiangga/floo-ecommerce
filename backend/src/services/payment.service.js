@@ -1,5 +1,6 @@
 "use strict";
 
+const MidtransService = require("./midtrans.service");
 const PaymentRepository = require("../repositories/payment.repository");
 const OrderRepository = require("../repositories/order.repository");
 
@@ -60,25 +61,33 @@ class PaymentService {
       throw new Error("Order is not waiting for payment");
     }
 
-    const existing = await PaymentRepository.findByOrder(payload.order_id);
+    const existing = await PaymentRepository.findByOrder(order.id);
 
     if (existing) {
       throw new Error("Payment already exists");
     }
 
+    const snap = await MidtransService.createSnap(order, order.customer || {});
+
     const payment = await PaymentRepository.create(
       {
         order_id: order.id,
         method: payload.method,
-        provider: payload.provider || "MANUAL",
+        provider: "MIDTRANS",
+
         amount: order.total,
-        payment_code: payload.payment_code,
-        transaction_id: payload.transaction_id,
-        snap_token: payload.snap_token,
-        payment_url: payload.payment_url,
-        expired_at: payload.expired_at,
-        notes: payload.notes,
+
+        transaction_id: String(order.code || order.id),
+
+        snap_token: snap.token,
+
+        payment_url: snap.redirect_url,
+
+        expired_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+
         status: PAYMENT_STATUS.PENDING,
+
+        notes: payload.notes,
       },
       transaction,
     );
@@ -91,8 +100,9 @@ class PaymentService {
       transaction,
     );
 
-    return payment;
+    return PaymentRepository.findById(payment.id);
   }
+
   async pay(id, payload = {}) {
     const payment = await PaymentRepository.findById(id);
 
@@ -101,7 +111,7 @@ class PaymentService {
     }
 
     if (payment.status === PAYMENT_STATUS.PAID) {
-      throw new Error("Payment already paid");
+      return payment;
     }
 
     if (
@@ -114,12 +124,24 @@ class PaymentService {
 
     await PaymentRepository.update(id, {
       status: PAYMENT_STATUS.PAID,
+      provider: "MIDTRANS",
+
       paid_at: payload.paid_at || new Date(),
+      verified_at: new Date(),
+
       transaction_id: payload.transaction_id || payment.transaction_id,
-      payment_code: payload.payment_code || payment.payment_code,
+
+      payment_code:
+        payload.va_numbers?.[0]?.va_number ||
+        payload.bill_key ||
+        payload.payment_code ||
+        payment.payment_code,
+
       snap_token: payload.snap_token || payment.snap_token,
+
       payment_url: payload.payment_url || payment.payment_url,
-      webhook_payload: payload.webhook_payload || payment.webhook_payload,
+
+      webhook_payload: payload,
     });
 
     await OrderRepository.update(payment.order_id, {
@@ -128,6 +150,43 @@ class PaymentService {
     });
 
     return PaymentRepository.findById(id);
+  }
+
+  async createSnap(order_id) {
+    const payment = await PaymentRepository.findByOrder(order_id);
+
+    if (!payment) {
+      throw new Error("Payment not found");
+    }
+
+    if (payment.snap_token && payment.status === PAYMENT_STATUS.PENDING) {
+      return payment;
+    }
+
+    const order = payment.order;
+
+    const snap = await MidtransService.createSnap(order, order.customer || {});
+
+    await PaymentRepository.update(payment.id, {
+      snap_token: snap.token,
+      payment_url: snap.redirect_url,
+    });
+
+    return PaymentRepository.findById(payment.id);
+  }
+
+  async checkStatus(order_id) {
+    const payment = await PaymentRepository.findByOrder(order_id);
+
+    if (!payment) {
+      throw new Error("Payment not found");
+    }
+
+    const result = await MidtransService.getStatus(payment.transaction_id);
+
+    await this.handleWebhook(result, false);
+
+    return PaymentRepository.findById(payment.id);
   }
 
   async expire(id) {
@@ -186,7 +245,9 @@ class PaymentService {
     if (!payment) {
       throw new Error("Payment not found");
     }
-
+    if (payment.status === PAYMENT_STATUS.REFUNDED) {
+      return payment;
+    }
     const order = await OrderRepository.findById(payment.order_id);
 
     if (!order) {
@@ -250,46 +311,89 @@ class PaymentService {
     }
   }
 
-  async handleWebhook(payload) {
+  async handleWebhook(payload, verifySignature = true) {
+    if (verifySignature && !MidtransService.verifySignature(payload)) {
+      throw new Error("Invalid Midtrans signature");
+    }
+
+    // order_id yang dikirim Midtrans = transaction_id yang kita simpan
     const payment = await PaymentRepository.findByTransactionId(
-      payload.transaction_id,
+      payload.order_id,
     );
 
     if (!payment) {
       throw new Error("Payment not found");
     }
-    const statusMap = {
-      settlement: PAYMENT_STATUS.PAID,
-      capture: PAYMENT_STATUS.PAID,
-      pending: PAYMENT_STATUS.PENDING,
-      expire: PAYMENT_STATUS.EXPIRED,
-      cancel: PAYMENT_STATUS.CANCELLED,
-      refund: PAYMENT_STATUS.REFUNDED,
-      deny: PAYMENT_STATUS.FAILED,
-    };
-    const gatewayStatus = payload.transaction_status || payload.status;
 
-    const status = statusMap[gatewayStatus] || gatewayStatus;
-    switch (status) {
-      case PAYMENT_STATUS.PAID:
-        return this.pay(payment.id, payload);
+    const transactionStatus = payload.transaction_status;
+    const fraudStatus = payload.fraud_status;
 
-      case PAYMENT_STATUS.EXPIRED:
+    // Simpan payload webhook terlebih dahulu
+    await PaymentRepository.update(payment.id, {
+      webhook_payload: payload,
+    });
+
+    switch (transactionStatus) {
+      case "capture":
+        // Credit Card
+        if (fraudStatus === "challenge") {
+          return PaymentRepository.findById(payment.id);
+        }
+
+        return this.pay(payment.id, {
+          ...payload,
+          status: PAYMENT_STATUS.PAID,
+        });
+
+      case "settlement":
+        return this.pay(payment.id, {
+          ...payload,
+          status: PAYMENT_STATUS.PAID,
+        });
+
+      case "pending":
+        await PaymentRepository.update(payment.id, {
+          status: PAYMENT_STATUS.PENDING,
+          webhook_payload: payload,
+          payment_code:
+            payload.va_numbers?.[0]?.va_number ||
+            payload.bill_key ||
+            payment.payment_code,
+        });
+
+        return PaymentRepository.findById(payment.id);
+
+      case "expire":
         return this.expire(payment.id);
 
-      case PAYMENT_STATUS.CANCELLED:
+      case "cancel":
         return this.cancel(payment.id);
 
-      case PAYMENT_STATUS.REFUNDED:
-        return this.refund(payment.id);
-
-      case PAYMENT_STATUS.FAILED:
+      case "deny":
         return this.updateStatus(payment.id, {
           ...payload,
           status: PAYMENT_STATUS.FAILED,
+          failed_reason: payload.status_message,
         });
+
+      case "refund":
+      case "partial_refund":
+        return this.refund(payment.id);
+
+      case "authorize":
+        await PaymentRepository.update(payment.id, {
+          status: PAYMENT_STATUS.PENDING,
+          webhook_payload: payload,
+        });
+
+        return PaymentRepository.findById(payment.id);
+
       default:
-        return payment;
+        await PaymentRepository.update(payment.id, {
+          webhook_payload: payload,
+        });
+
+        return PaymentRepository.findById(payment.id);
     }
   }
 

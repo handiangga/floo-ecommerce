@@ -1,3 +1,5 @@
+"use strict";
+
 const router = require("express").Router();
 
 const ProductImageController = require("../controllers/product-image.controller");
@@ -5,6 +7,7 @@ const ProductImageController = require("../controllers/product-image.controller"
 const authentication = require("../middlewares/authentication");
 const authorization = require("../middlewares/authorization");
 const validation = require("../middlewares/validation");
+const upload = require("../middlewares/upload");
 
 const ProductImageValidation = require("../validations/product-image.validation");
 
@@ -14,6 +17,7 @@ router.post(
   "/",
   authentication,
   authorization("OWNER", "ADMIN"),
+  upload.array("images", 10),
   validation(ProductImageValidation.create),
   ProductImageController.store,
 );
