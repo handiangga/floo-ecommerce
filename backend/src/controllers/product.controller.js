@@ -47,7 +47,7 @@ class ProductController {
 
   async store(req, res, next) {
     try {
-      const result = await ProductService.create(req.body);
+      const result = await ProductService.create(req.body, req.file);
 
       return ResponseHelper.created(
         res,
@@ -61,7 +61,11 @@ class ProductController {
 
   async update(req, res, next) {
     try {
-      const result = await ProductService.update(req.params.id, req.body);
+      const result = await ProductService.update(
+        req.params.id,
+        req.body,
+        req.file,
+        );
 
       return ResponseHelper.updated(
         res,

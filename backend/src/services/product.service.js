@@ -1,5 +1,7 @@
 const ProductRepository = require("../repositories/product.repository");
 const CategoryRepository = require("../repositories/category.repository");
+const SupabaseService = require("./supabase.service");
+const ImageHelper = require("../helpers/image.helper");
 
 const PaginationHelper = require("../helpers/pagination.helper");
 const SlugHelper = require("../helpers/slug.helper");
@@ -48,7 +50,7 @@ class ProductService {
     return product;
   }
 
-  async create(payload) {
+  async create(payload, file) {
     const category = await CategoryRepository.findById(payload.category_id);
 
     if (!category) {
@@ -63,10 +65,19 @@ class ProductService {
       throw new Error("Product already exists");
     }
 
+    if (file) {
+      const optimized = await ImageHelper.product(file);
+
+      const upload = await SupabaseService.upload(optimized, "products");
+
+      payload.image_url = upload.public_url;
+      payload.image_path = upload.path;
+    }
+
     return ProductRepository.create(payload);
   }
 
-  async update(id, payload) {
+  async update(id, payload, file) {
     const product = await ProductRepository.findById(id);
 
     if (!product) {
@@ -91,6 +102,19 @@ class ProductService {
       }
     }
 
+    if (file) {
+      if (product.image_path) {
+        await SupabaseService.remove(product.image_path);
+      }
+
+      const optimized = await ImageHelper.product(file);
+
+      const upload = await SupabaseService.upload(optimized, "products");
+
+      payload.image_url = upload.public_url;
+      payload.image_path = upload.path;
+    }
+
     return ProductRepository.update(id, payload);
   }
 
@@ -99,6 +123,10 @@ class ProductService {
 
     if (!product) {
       throw new Error("Product not found");
+    }
+
+    if (product.image_path) {
+      await SupabaseService.remove(product.image_path);
     }
 
     await ProductRepository.delete(id);
