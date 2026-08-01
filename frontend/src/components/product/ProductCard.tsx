@@ -5,76 +5,92 @@ import Link from "next/link";
 import { Heart, ShoppingBag, Eye, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { Product } from "@/types/product";
+
 interface ProductCardProps {
-  id: number;
-  name: string;
-  image: string;
-  hoverImage?: string;
-  price: number;
-  oldPrice?: number;
-  rating?: number;
-  sold?: number;
-  badge?: string;
+  product: Product;
 }
 
-export default function ProductCard({
-  id,
-  name,
-  image,
-  hoverImage,
-  price,
-  oldPrice,
-  rating = 4.9,
-  sold = 0,
-  badge,
-}: ProductCardProps) {
+export default function ProductCard({ product }: ProductCardProps) {
+  const thumbnail =
+    product.image_url ||
+    product.images?.[0]?.image_url ||
+    "/images/default.jpg";
+
+  const hoverImage = product.images?.[1]?.image_url;
+
+  const variant = product.variants?.[0];
+
+  const price = variant?.discount_price || variant?.price || 0;
+
+  const oldPrice = variant?.discount_price ? variant.price : undefined;
+
   return (
     <motion.div
       whileHover={{ y: -6 }}
       transition={{ duration: 0.3 }}
       className="group"
     >
-      <Link href={`/product/${id}`}>
-        <div className="overflow-hidden rounded-[30px] bg-white shadow-sm transition hover:shadow-xl">
+      <Link href={`/products/${product.slug}`}>
+        <div className="overflow-hidden rounded-[30px] bg-white shadow-sm transition duration-300 hover:shadow-xl">
           {/* IMAGE */}
           <div className="relative aspect-[4/5] overflow-hidden">
             <Image
-              src={image}
-              alt={name}
+              src={thumbnail}
+              alt={product.name}
               fill
+              sizes="(max-width:768px) 100vw, 25vw"
               className={`object-cover transition duration-700 ${
-                hoverImage ? "group-hover:opacity-0" : ""
+                hoverImage ? "group-hover:opacity-0" : "group-hover:scale-110"
               }`}
             />
 
             {hoverImage && (
               <Image
                 src={hoverImage}
-                alt={name}
+                alt={product.name}
                 fill
-                className="object-cover opacity-0 transition duration-700 group-hover:opacity-100"
+                sizes="(max-width:768px) 100vw, 25vw"
+                className="object-cover opacity-0 transition duration-700 group-hover:opacity-100 group-hover:scale-110"
               />
             )}
 
-            {/* Badge */}
-            {badge && (
-              <div className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-lg">
-                {badge}
-              </div>
-            )}
+            {/* BADGE */}
+            <div className="absolute left-4 top-4 flex flex-col gap-2">
+              {product.is_best_seller && (
+                <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow">
+                  BEST SELLER
+                </span>
+              )}
 
-            {/* Wishlist */}
-            <button className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow transition hover:scale-110">
+              {product.is_new_arrival && (
+                <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow">
+                  NEW
+                </span>
+              )}
+            </div>
+
+            {/* WISHLIST */}
+            <button
+              type="button"
+              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow transition hover:scale-110"
+            >
               <Heart size={18} />
             </button>
 
-            {/* Hover Action */}
+            {/* HOVER ACTION */}
             <div className="absolute inset-x-0 bottom-4 flex justify-center gap-3 opacity-0 transition duration-300 group-hover:opacity-100">
-              <button className="rounded-full bg-white p-3 shadow-lg">
+              <button
+                type="button"
+                className="rounded-full bg-white p-3 shadow-lg transition hover:scale-110"
+              >
                 <Eye size={18} />
               </button>
 
-              <button className="rounded-full bg-primary p-3 text-white shadow-lg">
+              <button
+                type="button"
+                className="rounded-full bg-primary p-3 text-white shadow-lg transition hover:scale-110"
+              >
                 <ShoppingBag size={18} />
               </button>
             </div>
@@ -85,12 +101,12 @@ export default function ProductCard({
             <div className="mb-2 flex items-center gap-1 text-sm">
               <Star size={14} className="fill-yellow-400 text-yellow-400" />
 
-              <span>{rating}</span>
+              <span>5.0</span>
 
-              <span className="text-muted-foreground">({sold})</span>
+              <span className="text-muted-foreground">(Coming Soon)</span>
             </div>
 
-            <h3 className="line-clamp-2 font-medium text-lg">{name}</h3>
+            <h3 className="line-clamp-2 text-lg font-medium">{product.name}</h3>
 
             <div className="mt-3 flex items-center gap-2">
               {oldPrice && (
@@ -103,6 +119,12 @@ export default function ProductCard({
                 Rp{price.toLocaleString("id-ID")}
               </span>
             </div>
+
+            {variant && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Stock {variant.stock}
+              </p>
+            )}
           </div>
         </div>
       </Link>

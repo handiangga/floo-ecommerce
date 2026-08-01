@@ -144,6 +144,16 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false,
       },
 
+      is_best_seller: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+
+      is_new_arrival: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+
       view_count: {
         type: DataTypes.INTEGER,
         allowNull: false,

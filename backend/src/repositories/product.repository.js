@@ -16,6 +16,8 @@ class ProductRepository {
     category_id,
     status,
     is_featured,
+    is_best_seller,
+    is_new_arrival,
     sort = "createdAt",
     order = "DESC",
   }) {
@@ -35,6 +37,14 @@ class ProductRepository {
       where.status = status;
     }
 
+    if (is_best_seller !== undefined) {
+      where.is_best_seller = is_best_seller;
+    }
+
+    if (is_new_arrival !== undefined) {
+      where.is_new_arrival = is_new_arrival;
+    }
+
     if (is_featured !== undefined) {
       where.is_featured = is_featured;
     }
@@ -45,6 +55,13 @@ class ProductRepository {
         {
           model: Category,
           as: "category",
+        },
+        {
+          model: ProductImage,
+          as: "images",
+          required: false,
+          separate: true,
+          order: [["sort_order", "ASC"]],
         },
       ],
       limit,
@@ -64,6 +81,7 @@ class ProductRepository {
           model: ProductImage,
           as: "images",
           required: false,
+          separate: true,
           order: [["sort_order", "ASC"]],
         },
         {
@@ -92,6 +110,28 @@ class ProductRepository {
         {
           model: Category,
           as: "category",
+        },
+        {
+          model: ProductImage,
+          as: "images",
+          required: false,
+          separate: true,
+          order: [["sort_order", "ASC"]],
+        },
+        {
+          model: ProductVariant,
+          as: "variants",
+          required: false,
+          include: [
+            {
+              model: Color,
+              as: "color",
+            },
+            {
+              model: Size,
+              as: "size",
+            },
+          ],
         },
       ],
     });

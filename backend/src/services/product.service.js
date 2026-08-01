@@ -16,10 +16,22 @@ class ProductService {
       search: query.search || "",
       category_id: query.category_id,
       status: query.status,
+
       is_featured:
         query.is_featured !== undefined
           ? query.is_featured === "true"
           : undefined,
+
+      is_best_seller:
+        query.is_best_seller !== undefined
+          ? query.is_best_seller === "true"
+          : undefined,
+
+      is_new_arrival:
+        query.is_new_arrival !== undefined
+          ? query.is_new_arrival === "true"
+          : undefined,
+
       sort: query.sort || "createdAt",
       order: query.order || "DESC",
     });
