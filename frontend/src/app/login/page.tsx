@@ -1,0 +1,6 @@
+"use client";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import MainLayout from "@/components/layout/MainLayout";
+import { CustomerAuthService } from "@/services/auth.service";
+export default function LoginPage() { const router = useRouter(); const [error, setError] = useState(""); const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const values = new FormData(event.currentTarget); try { const result = await CustomerAuthService.login(String(values.get("email")), String(values.get("password"))); localStorage.setItem("access_token", result.data.token); router.push("/account"); } catch { setError("Email atau password tidak valid."); } }; return <MainLayout><section className="mx-auto max-w-md px-6 py-16"><h1 className="font-luxury text-5xl">Welcome Back</h1><form onSubmit={submit} className="mt-8 space-y-4"><input required name="email" type="email" placeholder="Email" className="w-full rounded-xl border border-border p-3" /><input required name="password" type="password" placeholder="Password" className="w-full rounded-xl border border-border p-3" />{error && <p className="text-sm text-destructive">{error}</p>}<button className="w-full rounded-full bg-primary py-3 text-white">Sign In</button></form></section></MainLayout>; }

@@ -63,6 +63,21 @@ class ProductRepository {
           separate: true,
           order: [["sort_order", "ASC"]],
         },
+        {
+          model: ProductVariant,
+          as: "variants",
+          required: false,
+          include: [
+            {
+              model: Color,
+              as: "color",
+            },
+            {
+              model: Size,
+              as: "size",
+            },
+          ],
+        },
       ],
       limit,
       offset,
