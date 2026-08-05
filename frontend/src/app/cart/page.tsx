@@ -7,18 +7,21 @@ import MainLayout from "@/components/layout/MainLayout";
 import Loading from "@/components/common/Loading";
 import Empty from "@/components/common/Empty";
 import { useCart, useCartActions } from "@/hooks/useCart";
+import { CustomerSession } from "@/lib/session";
 
 const money = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
 
 export default function CartPage() {
   const router = useRouter();
+  const hasToken = CustomerSession.has();
   const { data, isLoading, isError } = useCart();
   const { update, remove } = useCartActions();
   const cart = data?.data?.cart;
   const summary = data?.data?.summary;
   const items = cart?.items ?? [];
-  useEffect(() => { if (!localStorage.getItem("access_token")) router.replace("/login?next=/cart"); }, [router]);
+  useEffect(() => { if (!CustomerSession.has()) router.replace("/login?next=/cart"); }, [router]);
 
+  if (!hasToken) return <MainLayout><Loading /></MainLayout>;
   if (isLoading) return <MainLayout><Loading /></MainLayout>;
   if (isError) return <MainLayout><Empty title="Please sign in to view your cart" /></MainLayout>;
 

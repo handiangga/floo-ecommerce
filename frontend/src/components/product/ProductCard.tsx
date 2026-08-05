@@ -2,12 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, ShoppingBag, Eye, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Product } from "@/types/product";
 import { ProductService } from "@/services/product.service";
+import { useCartActions } from "@/hooks/useCart";
+import { useWishlistActions } from "@/hooks/useWishlist";
 
 interface ProductCardProps {
   product: Product;
@@ -15,6 +18,14 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { add: addToCart } = useCartActions();
+  const { add: addToWishlist } = useWishlistActions();
+  const requireLogin = () => {
+    if (localStorage.getItem("access_token")) return true;
+    router.push(`/login?next=${encodeURIComponent(`/products/${product.slug}`)}`);
+    return false;
+  };
   const getImageUrl = (image?: { image_url?: string; image?: string }) => {
     const value = image?.image_url?.trim() || image?.image?.trim();
 
@@ -50,7 +61,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       className="group"
     >
       <Link href={`/products/${product.slug}`} prefetch>
-        <div className="overflow-hidden rounded-[30px] bg-white shadow-sm transition duration-300 hover:shadow-xl">
+        <div className="overflow-hidden rounded-[22px] border border-[#e3d6c8] bg-white shadow-[0_8px_24px_rgba(73,48,27,0.08)] transition duration-300 hover:border-[#c6a37d] hover:shadow-[0_16px_34px_rgba(73,48,27,0.16)]">
           {/* IMAGE */}
           <div className="relative aspect-[4/5] overflow-hidden">
             <Image
@@ -75,15 +86,13 @@ export default function ProductCard({ product }: ProductCardProps) {
 
             {/* BADGE */}
             <div className="absolute left-4 top-4 flex flex-col gap-2">
-              {product.is_best_seller && (
+              {product.is_new_arrival ? (
+                <span className="bg-[#fcfaf7]/95 px-3 py-1.5 text-[10px] font-semibold tracking-[0.14em] text-[#2d241f] shadow-sm">
+                  NEW
+                </span>
+              ) : product.is_best_seller && (
                 <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow">
                   BEST SELLER
-                </span>
-              )}
-
-              {product.is_new_arrival && (
-                <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow">
-                  NEW
                 </span>
               )}
             </div>
@@ -91,40 +100,39 @@ export default function ProductCard({ product }: ProductCardProps) {
             {/* WISHLIST */}
             <button
               type="button"
+              onClick={(event) => { event.preventDefault(); event.stopPropagation(); if (requireLogin()) addToWishlist.mutate(product.id); }}
               className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow transition hover:scale-110"
             >
               <Heart size={18} />
             </button>
 
             {/* HOVER ACTION */}
-            <div className="absolute inset-x-0 bottom-4 flex justify-center gap-3 opacity-0 transition duration-300 group-hover:opacity-100">
+            <div className="absolute inset-x-4 bottom-4 flex translate-y-3 gap-2 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
               <button
                 type="button"
-                className="rounded-full bg-white p-3 shadow-lg transition hover:scale-110"
+                onClick={(event) => { event.preventDefault(); event.stopPropagation(); router.push(`/products/${product.slug}`); }}
+                className="flex flex-1 items-center justify-center gap-2 bg-white px-3 py-3 text-xs font-medium text-[#2d241f] shadow-lg transition hover:bg-[#fcfaf7]"
               >
                 <Eye size={18} />
+                Quick View
               </button>
 
               <button
                 type="button"
-                className="rounded-full bg-primary p-3 text-white shadow-lg transition hover:scale-110"
+                disabled={!variant || variant.stock === 0 || addToCart.isPending}
+                onClick={(event) => { event.preventDefault(); event.stopPropagation(); if (variant && requireLogin()) addToCart.mutate({ variantId: variant.id, qty: 1 }); }}
+                className="flex flex-1 items-center justify-center gap-2 bg-[#2d241f] px-3 py-3 text-xs font-medium text-white shadow-lg transition hover:bg-[#b88a55]"
               >
                 <ShoppingBag size={18} />
+                Add to Cart
               </button>
             </div>
           </div>
 
           {/* CONTENT */}
-          <div className="p-5">
-            <div className="mb-2 flex items-center gap-1 text-sm">
-              <Star size={14} className="fill-yellow-400 text-yellow-400" />
-
-              <span>5.0</span>
-
-              <span className="text-muted-foreground">(Coming Soon)</span>
-            </div>
-
-            <h3 className="line-clamp-2 text-lg font-medium">{product.name}</h3>
+          <div className="border-t border-[#eee6dd] bg-[#fffdf9] p-5">
+            <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-[#a07750]">{product.category?.name || "Floo Collection"}</p>
+            <h3 className="line-clamp-2 font-luxury text-[21px] leading-tight">{product.name}</h3>
 
             <div className="mt-3 flex items-center gap-2">
               {oldPrice && (
@@ -133,14 +141,14 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </span>
               )}
 
-              <span className="text-xl font-bold text-primary">
+              <span className="text-base font-semibold text-[#2d241f]">
                 Rp{price.toLocaleString("id-ID")}
               </span>
             </div>
 
             {variant && (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Stock {variant.stock}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {variant.stock > 0 ? "Ready to ship" : "Sold out"}
               </p>
             )}
           </div>

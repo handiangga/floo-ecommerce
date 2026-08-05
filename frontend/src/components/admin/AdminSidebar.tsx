@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BadgePercent, BarChart3, FolderTree, LayoutDashboard, LogOut, Menu,
+  BadgePercent, BarChart3, Crown, FolderTree, LayoutDashboard, LogOut, Menu,
   Package, ReceiptText, Star, Tag, Users, X,
 } from "lucide-react";
 
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { AdminSession } from "@/lib/session";
 
 const links = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
@@ -30,7 +31,7 @@ export default function AdminSidebar() {
   const router = useRouter();
 
   const logout = () => {
-    localStorage.removeItem("admin_access_token");
+    AdminSession.clear();
     router.replace("/admin/login");
   };
 
@@ -46,13 +47,20 @@ export default function AdminSidebar() {
 
   return (
     <>
-      <aside className="hidden min-h-screen w-64 shrink-0 border-r border-border bg-white px-4 py-6 lg:flex lg:flex-col">
+      <aside className="hidden min-h-screen w-64 shrink-0 border-r border-[#eee5dc] bg-white px-4 py-6 lg:flex lg:flex-col">
         <Link href="/admin" className="px-3">
           <p className="font-luxury text-[28px] leading-none tracking-[0.12em] text-foreground">FLOO</p>
           <p className="mt-1 text-[9px] tracking-[0.27em] text-muted-foreground">FASHION · ADMIN</p>
         </Link>
         <div className="mt-9">{navigation()}</div>
-        <div className="mt-auto border-t border-border pt-4">
+        <div className="mt-auto">
+          <div className="rounded-xl border border-[#eadfd4] bg-[#fcfaf7] p-4">
+            <div className="flex items-start gap-3"><span className="flex size-9 items-center justify-center rounded-full bg-[#f5eadb] text-[#b88a55]"><Crown className="size-4" /></span><div><p className="text-xs font-semibold text-foreground">Upgrade Store</p><p className="mt-1 text-[11px] leading-4 text-muted-foreground">Tingkatkan toko Anda ke paket premium.</p></div></div>
+            <button type="button" className="mt-4 w-full bg-[#b88a55] px-3 py-2 text-xs text-white transition hover:bg-[#9d7145]">Upgrade Sekarang</button>
+          </div>
+          <div className="mt-4 border border-[#eadfd4] bg-[#fcfaf7] p-4"><p className="font-luxury text-lg">Floo Fashion</p><p className="mt-1 text-[11px] text-muted-foreground">Admin Panel</p></div>
+        </div>
+        <div className="mt-5 border-t border-border pt-4">
           <Link href="/" className="block px-3 py-2 text-xs text-muted-foreground transition hover:text-primary">← Lihat toko</Link>
           <button type="button" onClick={logout} className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"><LogOut className="size-[18px]" strokeWidth={1.7} /> Keluar</button>
         </div>

@@ -3,6 +3,10 @@ import api from "@/lib/api";
 export const AdminService = {
   login: (email: string, password: string) => api.post("/auth/login", { email, password }).then((response) => response.data),
   dashboard: () => api.get("/dashboard").then((response) => response.data),
+  dashboardRevenue: () => api.get("/dashboard/revenue").then((response) => response.data),
+  dashboardOrderStatistics: () => api.get("/dashboard/orders").then((response) => response.data),
+  dashboardTopProducts: () => api.get("/dashboard/top-products", { params: { limit: 5 } }).then((response) => response.data),
+  dashboardRecentOrders: () => api.get("/dashboard/recent-orders", { params: { limit: 5 } }).then((response) => response.data),
   products: () => api.get("/products", { params: { limit: 100 } }).then((response) => response.data),
   removeProduct: (id: number) => api.delete(`/products/${id}`).then((response) => response.data),
   createProduct: (data: FormData) => api.post("/products", data, { headers: { "Content-Type": "multipart/form-data" } }).then((response) => response.data),

@@ -30,7 +30,7 @@ export default function NewArrival() {
   }
 
   return (
-    <section className="py-24">
+    <section className="border-y border-[#e5d7c8] bg-[#fbf8f4] py-24">
       <div className="container-custom">
         <div className="mb-14 flex items-end justify-between">
           <div>

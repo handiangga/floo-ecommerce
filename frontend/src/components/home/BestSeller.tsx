@@ -29,27 +29,27 @@ export default function BestSeller() {
   }
 
   return (
-    <section className="py-24">
+    <section className="bg-[#fcfaf7] py-16 md:py-20">
       <div className="container-custom">
-        <div className="mb-14 flex items-end justify-between">
+        <div className="mb-10 flex items-end justify-between">
           <div>
-            <p className="text-primary text-sm uppercase tracking-[0.35em]">
+            <p className="text-primary text-[10px] uppercase tracking-[0.35em]">
               Bestseller
             </p>
 
-            <h2 className="font-luxury mt-3 text-5xl">Most Loved</h2>
+            <h2 className="font-luxury mt-3 text-4xl md:text-5xl">Most Loved</h2>
           </div>
 
           <Link
             href="/best-seller"
-            className="hidden items-center gap-2 text-primary md:flex"
+            className="hidden items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-primary md:flex"
           >
             View All
             <ArrowRight size={18} />
           </Link>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

@@ -10,7 +10,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="pt-[76px]">{children}</main>
+      <main className="pt-[84px]">{children}</main>
 
       <Footer />
     </div>

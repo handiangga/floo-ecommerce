@@ -44,20 +44,27 @@ export default function Hero() {
         clickable: true,
       }}
       navigation
-      className="h-screen"
+      className="h-[92vh] min-h-[680px]"
     >
       {banners.filter((banner) => banner.image?.trim()).map((banner) => (
         <SwiperSlide key={banner.id}>
-          <section className="relative h-[92vh] min-h-[720px] overflow-hidden">
-            <Image
-              src={banner.image}
-              alt={banner.title}
-              fill
-              priority
-              sizes="100vw"
-              unoptimized
-              className="object-cover"
-            />
+          <section className="relative h-[92vh] min-h-[680px] overflow-hidden">
+            <motion.div
+              initial={{ scale: 1.08 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 7, ease: "easeOut" }}
+              className="absolute inset-0"
+            >
+              <Image
+                src={banner.image}
+                alt={banner.title}
+                fill
+                priority
+                sizes="100vw"
+                unoptimized
+                className="object-cover"
+              />
+            </motion.div>
 
             <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent" />
 
@@ -66,7 +73,8 @@ export default function Hero() {
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-5 tracking-[0.4em] uppercase text-sm text-[#d8b68d]"
+                  transition={{ duration: 0.65, delay: 0.1 }}
+                  className="mb-5 text-xs uppercase tracking-[0.42em] text-[#e6c18d]"
                 >
                   NEW COLLECTION
                 </motion.p>
@@ -74,7 +82,8 @@ export default function Hero() {
                 <motion.h1
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="font-luxury text-5xl leading-tight md:text-7xl"
+                  transition={{ duration: 0.75, delay: 0.2 }}
+                  className="font-luxury text-5xl leading-[1.02] md:text-7xl"
                 >
                   {banner.title}
                 </motion.h1>
@@ -83,29 +92,31 @@ export default function Hero() {
                   <motion.p
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-8 max-w-md text-base leading-8 text-white/80"
+                    transition={{ duration: 0.7, delay: 0.32 }}
+                    className="mt-7 max-w-md text-base leading-8 text-white/85"
                   >
                     {banner.description}
                   </motion.p>
                 )}
 
                 <motion.div
-                  initial={{ opacity: 0 }}
+                  initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1 }}
-                  className="mt-10 flex flex-wrap gap-4"
+                  transition={{ duration: 0.6, delay: 0.45 }}
+                  className="mt-9 flex flex-wrap gap-3"
                 >
                   <Link
                     href={banner.link}
-                    className="rounded-full bg-primary px-8 py-4 font-medium text-white transition hover:scale-105"
+                    className="rounded-full bg-[#b88a55] px-7 py-3.5 text-sm font-medium text-white transition duration-300 hover:scale-[1.03] hover:bg-[#c89b65]"
                   >
-                    {banner.button_text || "Shop Now"}
+                    {banner.button_text || "Shop Collection"}
                   </Link>
 
                   <Link
-                    href="/products"
-                    className="flex items-center gap-2 rounded-full border border-white/30 px-8 py-4 backdrop-blur transition hover:bg-white hover:text-black"
+                    href="#floo-story"
+                    className="flex items-center gap-2 rounded-full border border-white/35 px-7 py-3.5 text-sm backdrop-blur-sm transition duration-300 hover:border-white hover:bg-white hover:text-[#2d241f]"
                   >
-                    View Collection
+                    Watch Campaign
                     <ChevronRight size={18} />
                   </Link>
                 </motion.div>

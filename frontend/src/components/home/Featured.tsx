@@ -21,18 +21,18 @@ export default function Featured() {
   if (products.length === 0) return <Empty title="No featured products found" />;
 
   return (
-    <section className="py-24">
+    <section className="bg-[#29231f] py-24 text-[#fffaf5]">
       <div className="container-custom">
         <div className="mb-14 flex items-end justify-between">
           <div>
-            <p className="text-primary text-sm uppercase tracking-[0.35em]">
+            <p className="text-[#d6ad78] text-sm uppercase tracking-[0.35em]">
               Curated for you
             </p>
             <h2 className="font-luxury mt-3 text-5xl">Featured Product</h2>
           </div>
           <Link
             href="/products"
-            className="hidden items-center gap-2 text-primary md:flex"
+            className="hidden items-center gap-2 text-[#e6c59e] md:flex"
           >
             View Collection <ArrowRight size={18} />
           </Link>

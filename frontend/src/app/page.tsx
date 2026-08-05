@@ -1,27 +1,23 @@
 import MainLayout from "@/components/layout/MainLayout";
 import Hero from "@/components/home/Hero";
-import Categories from "@/components/home/Categories";
 import BestSeller from "@/components/home/BestSeller";
-import NewArrival from "@/components/home/NewArrival";
 import Story from "@/components/home/Story";
-import Featured from "@/components/home/Featured";
 import Review from "@/components/home/Review";
 import Instagram from "@/components/home/Instagram";
+import TrustBar from "@/components/home/TrustBar";
+import Occasions from "@/components/home/Occasions";
+import ProductPromise from "@/components/home/ProductPromise";
 
 export default function Home() {
   return (
     <MainLayout>
       <Hero />
+      <TrustBar />
 
-      <Categories />
-
-      <Featured />
-
+      <Occasions />
       <BestSeller />
-
+      <ProductPromise />
       <Story />
-
-      <NewArrival />
       <Review />
       <Instagram />
     </MainLayout>

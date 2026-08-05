@@ -8,10 +8,11 @@ import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/s
 
 const menus = [
   { name: "New Arrival", href: "/new-arrival" },
-  { name: "Kebaya", href: "/products" },
-  { name: "Couple", href: "/products" },
-  { name: "Big Size", href: "/products" },
-  { name: "Sale", href: "/products" },
+  { name: "Kebaya", href: "/kebaya" },
+  { name: "Couple", href: "/couple" },
+  { name: "Big Size", href: "/big-size" },
+  { name: "Sale", href: "/sale" },
+  { name: "About Us", href: "#floo-story" },
 ];
 
 const iconLinks = [
@@ -26,7 +27,8 @@ export default function Navbar() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-[#e9e2d8] bg-[#fdfbf8]/95 text-[#29231f] backdrop-blur-md">
-      <div className="mx-auto grid h-[76px] max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-5 sm:px-8 lg:px-12">
+      <div className="flex h-[18px] items-center justify-center bg-[#2d241f] px-4 text-[8px] uppercase tracking-[0.17em] text-[#f5dfbf]">Gratis Ongkir untuk Pembelian Minimal Rp499.000</div>
+      <div className="mx-auto grid h-[66px] max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-5 sm:px-8 lg:px-12">
         <div className="flex items-center justify-start">
           <div className="lg:hidden">
             <Sheet>
@@ -83,7 +85,7 @@ export default function Navbar() {
             return (
               <Link key={item.name} href={item.href} className={`relative py-2 text-[13px] tracking-wide transition-colors hover:text-[#a26c36] ${active ? "text-[#a26c36]" : ""}`}>
                 {item.name}
-                {active && <span className="absolute inset-x-0 -bottom-0.5 mx-auto h-px w-4 bg-[#a26c36]" />}
+                <span className={`absolute inset-x-0 -bottom-0.5 mx-auto h-px bg-[#a26c36] transition-all duration-300 ${active ? "w-5" : "w-0 group-hover:w-5"}`} />
               </Link>
             );
           })}
