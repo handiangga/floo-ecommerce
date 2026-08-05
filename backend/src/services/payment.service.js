@@ -10,6 +10,25 @@ const PAYMENT_STATUS = require("../constants/paymentStatus");
 const ORDER_STATUS = require("../constants/orderStatus");
 
 class PaymentService {
+  async createForCustomer(orderId, customerId) {
+    const order = await OrderRepository.findById(orderId);
+
+    if (!order || String(order.customer_id) !== String(customerId)) {
+      throw new Error("Order not found");
+    }
+
+    const existing = await PaymentRepository.findByOrder(order.id);
+
+    if (existing) {
+      return existing;
+    }
+
+    return this.create({
+      order_id: order.id,
+      method: order.payment_method,
+    });
+  }
+
   async getAll(query) {
     const { page, limit, offset } = PaginationHelper.getPagination(query);
 

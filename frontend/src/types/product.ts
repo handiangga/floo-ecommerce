@@ -1,6 +1,7 @@
 export interface ProductImage {
   id: number;
-  image_url: string;
+  image_url?: string;
+  image?: string;
   sort_order?: number;
 }
 
@@ -54,4 +55,13 @@ export interface Product {
 
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProductQuery {
+  limit?: number;
+  is_featured?: boolean;
+  is_best_seller?: boolean;
+  is_new_arrival?: boolean;
+  category_id?: number;
+  search?: string;
 }

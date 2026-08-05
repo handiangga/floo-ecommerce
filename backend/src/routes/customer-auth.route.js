@@ -12,6 +12,9 @@ const CustomerAuthValidation = require("../validations/customer-auth.validation"
 // PUBLIC
 // ======================
 
+router.get("/google", CustomerAuthController.googleLogin);
+router.get("/google/callback", CustomerAuthController.googleCallback);
+
 router.post(
   "/register",
   validation(CustomerAuthValidation.register),

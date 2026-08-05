@@ -46,7 +46,7 @@ export default function Hero() {
       navigation
       className="h-screen"
     >
-      {banners.map((banner) => (
+      {banners.filter((banner) => banner.image?.trim()).map((banner) => (
         <SwiperSlide key={banner.id}>
           <section className="relative h-[92vh] min-h-[720px] overflow-hidden">
             <Image

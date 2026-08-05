@@ -22,6 +22,14 @@ router.post(
   ProductImageController.store,
 );
 
+router.put(
+  "/product/:productId/reorder",
+  authentication,
+  authorization("OWNER", "ADMIN"),
+  validation(ProductImageValidation.reorder),
+  ProductImageController.reorder,
+);
+
 router.delete(
   "/:id",
   authentication,

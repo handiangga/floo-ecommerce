@@ -1,13 +1,14 @@
 "use strict";
 
 const dashboardService = require("../services/dashboard.service");
+const ResponseHelper = require("../helpers/response.helper");
 
 class DashboardController {
   async overview(req, res, next) {
     try {
       const data = await dashboardService.getOverview();
 
-      return res.success(data, "Dashboard overview retrieved successfully");
+      return ResponseHelper.success(res, data, "Dashboard overview retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -19,7 +20,7 @@ class DashboardController {
 
       const data = await dashboardService.getRevenueChart(year);
 
-      return res.success(data, "Revenue chart retrieved successfully");
+      return ResponseHelper.success(res, data, "Revenue chart retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -29,7 +30,7 @@ class DashboardController {
     try {
       const data = await dashboardService.getOrderStatistics();
 
-      return res.success(data, "Order statistics retrieved successfully");
+      return ResponseHelper.success(res, data, "Order statistics retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -41,7 +42,7 @@ class DashboardController {
 
       const data = await dashboardService.getTopProducts(limit);
 
-      return res.success(data, "Top products retrieved successfully");
+      return ResponseHelper.success(res, data, "Top products retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -53,7 +54,7 @@ class DashboardController {
 
       const data = await dashboardService.getRecentOrders(limit);
 
-      return res.success(data, "Recent orders retrieved successfully");
+      return ResponseHelper.success(res, data, "Recent orders retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -65,7 +66,7 @@ class DashboardController {
 
       const data = await dashboardService.getLowStockProducts(limit);
 
-      return res.success(data, "Low stock products retrieved successfully");
+      return ResponseHelper.success(res, data, "Low stock products retrieved successfully");
     } catch (error) {
       next(error);
     }
@@ -77,7 +78,7 @@ class DashboardController {
 
       const data = await dashboardService.getRecentCustomers(limit);
 
-      return res.success(data, "Recent customers retrieved successfully");
+      return ResponseHelper.success(res, data, "Recent customers retrieved successfully");
     } catch (error) {
       next(error);
     }

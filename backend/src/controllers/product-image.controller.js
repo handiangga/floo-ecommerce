@@ -20,9 +20,7 @@ class ProductImageController {
 
   async store(req, res, next) {
     try {
-      const result = await ProductImageService.create(
-        req.body,
-      );
+      const result = await ProductImageService.create(req.body, req.files);
 
       return ResponseHelper.created(
         res,
@@ -41,6 +39,23 @@ class ProductImageController {
       return ResponseHelper.deleted(
         res,
         "Product image deleted successfully",
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async reorder(req, res, next) {
+    try {
+      const result = await ProductImageService.reorder(
+        req.params.productId,
+        req.body.image_ids,
+      );
+
+      return ResponseHelper.updated(
+        res,
+        result,
+        "Product image order updated successfully",
       );
     } catch (err) {
       next(err);

@@ -1,135 +1,100 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Heart, Menu, Search, ShoppingBag, User } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const menus = [
-  {
-    name: "New Arrival",
-    href: "/new-arrival",
-  },
-  {
-    name: "Kebaya",
-    href: "/kebaya",
-  },
-  {
-    name: "Couple",
-    href: "/couple",
-  },
-  {
-    name: "Big Size",
-    href: "/big-size",
-  },
-  {
-    name: "Sale",
-    href: "/sale",
-  },
+  { name: "New Arrival", href: "/new-arrival" },
+  { name: "Kebaya", href: "/products" },
+  { name: "Couple", href: "/products" },
+  { name: "Big Size", href: "/products" },
+  { name: "Sale", href: "/products" },
+];
+
+const iconLinks = [
+  { href: "/products", label: "Search products", icon: Search },
+  { href: "/wishlist", label: "Wishlist", icon: Heart },
+  { href: "/cart", label: "Shopping bag", icon: ShoppingBag },
+  { href: "/account", label: "My account", icon: User },
 ];
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 30);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const pathname = usePathname();
 
   return (
-    <header
-      className={`fixed left-0 top-0 z-50 w-full transition-all duration-300 ${
-        scrolled
-          ? "border-b border-border bg-background/95 shadow-sm backdrop-blur-xl"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 lg:px-8">
-        {/* Mobile Menu */}
-        <div className="flex items-center lg:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <button className="rounded-full p-2 hover:bg-muted">
-                <Menu className="size-6" />
-              </button>
-            </SheetTrigger>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-[#e9e2d8] bg-[#fdfbf8]/95 text-[#29231f] backdrop-blur-md">
+      <div className="mx-auto grid h-[76px] max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-5 sm:px-8 lg:px-12">
+        <div className="flex items-center justify-start">
+          <div className="lg:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <button type="button" aria-label="Open menu" className="rounded-full p-2.5 transition hover:bg-[#f2ece5]">
+                  <Menu className="size-5" strokeWidth={1.6} />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[310px] border-r-[#e9e2d8] bg-[#fdfbf8] p-0">
+                <div className="flex h-full flex-col px-7 py-8">
+                  <div className="flex items-start justify-between border-b border-[#e9e2d8] pb-6">
+                    <Link href="/" className="font-luxury text-[30px] leading-none tracking-[0.12em]">
+                      FLOO
+                      <span className="mt-1.5 block text-center text-[8px] tracking-[0.36em]">FASHION</span>
+                    </Link>
+                    <SheetClose asChild>
+                      <button type="button" aria-label="Close menu" className="rounded-full p-2 hover:bg-[#f2ece5]">
+                        <X className="size-5" strokeWidth={1.5} />
+                      </button>
+                    </SheetClose>
+                  </div>
+                  <nav className="mt-8 flex flex-col">
+                    {menus.map((item) => (
+                      <SheetClose asChild key={item.name}>
+                        <Link href={item.href} className="border-b border-[#eee8e1] py-4 text-[15px] tracking-wide transition hover:text-[#a26c36]">
+                          {item.name}
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </nav>
+                  <div className="mt-auto grid grid-cols-2 gap-3 border-t border-[#e9e2d8] pt-6 text-[14px]">
+                    <SheetClose asChild><Link href="/wishlist">Wishlist</Link></SheetClose>
+                    <SheetClose asChild><Link href="/account">My Account</Link></SheetClose>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
 
-            <SheetContent side="left" className="w-[280px]">
-              <div className="mt-10 flex flex-col gap-6">
-                {menus.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-lg font-medium transition hover:text-primary"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-
-                <hr />
-
-                <Link href="/wishlist">Wishlist</Link>
-
-                <Link href="/account">My Account</Link>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <Link href="/" aria-label="Floo Fashion home" className="hidden font-luxury text-[31px] leading-none tracking-[0.12em] lg:block">
+            FLOO
+            <span className="mt-1.5 block text-center text-[8px] tracking-[0.36em]">FASHION</span>
+          </Link>
         </div>
 
-        {/* Logo */}
-        <Link href="/" className="font-luxury text-3xl font-semibold">
+        <Link href="/" aria-label="Floo Fashion home" className="font-luxury text-[27px] leading-none tracking-[0.12em] lg:hidden">
           FLOO
+          <span className="mt-1.5 block text-center text-[8px] tracking-[0.36em]">FASHION</span>
         </Link>
 
-        {/* Desktop Menu */}
-        <nav className="hidden items-center gap-8 lg:flex">
-          {menus.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="text-sm font-medium transition hover:text-primary"
-            >
-              {item.name}
-            </Link>
-          ))}
+        <nav aria-label="Main navigation" className="hidden items-center justify-center gap-7 lg:flex xl:gap-9">
+          {menus.map((item) => {
+            const active = pathname === item.href && item.href !== "/products";
+            return (
+              <Link key={item.name} href={item.href} className={`relative py-2 text-[13px] tracking-wide transition-colors hover:text-[#a26c36] ${active ? "text-[#a26c36]" : ""}`}>
+                {item.name}
+                {active && <span className="absolute inset-x-0 -bottom-0.5 mx-auto h-px w-4 bg-[#a26c36]" />}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Right */}
-        <div className="flex items-center gap-1 md:gap-3">
-          <button className="rounded-full p-2 transition hover:bg-muted">
-            <Search className="size-5" />
-          </button>
-
-          <Link
-            href="/wishlist"
-            className="rounded-full p-2 transition hover:bg-muted"
-          >
-            <Heart className="size-5" />
-          </Link>
-
-          <Link
-            href="/cart"
-            className="relative rounded-full p-2 transition hover:bg-muted"
-          >
-            <ShoppingBag className="size-5" />
-
-            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
-              0
-            </span>
-          </Link>
-
-          <Link
-            href="/account"
-            className="hidden rounded-full p-2 transition hover:bg-muted md:flex"
-          >
-            <User className="size-5" />
-          </Link>
+        <div className="flex items-center justify-end gap-0.5 sm:gap-1">
+          {iconLinks.map(({ href, label, icon: Icon }, index) => (
+            <Link key={label} href={href} aria-label={label} className={`rounded-full p-2.5 transition hover:bg-[#f2ece5] ${index === 3 ? "hidden sm:inline-flex" : "inline-flex"}`}>
+              <Icon className="size-[19px]" strokeWidth={1.45} />
+            </Link>
+          ))}
         </div>
       </div>
     </header>

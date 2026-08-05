@@ -1,7 +1,8 @@
 import api from "@/lib/api";
+import { ProductQuery } from "@/types/product";
 
 export const ProductService = {
-  async getAll(params?: any) {
+  async getAll(params?: ProductQuery) {
     const res = await api.get("/products", {
       params,
     });

@@ -4,20 +4,31 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingBag, Eye, Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Product } from "@/types/product";
+import { ProductService } from "@/services/product.service";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const thumbnail =
-    product.image_url ||
-    product.images?.[0]?.image_url ||
-    "/images/default.jpg";
+  const queryClient = useQueryClient();
+  const getImageUrl = (image?: { image_url?: string; image?: string }) => {
+    const value = image?.image_url?.trim() || image?.image?.trim();
 
-  const hoverImage = product.images?.[1]?.image_url;
+    return value && (value.startsWith("/") || /^https?:\/\//.test(value))
+      ? value
+      : undefined;
+  };
+
+  const thumbnail =
+    getImageUrl({ image_url: product.image_url }) ||
+    getImageUrl(product.images?.[0]) ||
+    "/images/products/default-product.png";
+
+  const hoverImage = getImageUrl(product.images?.[1]);
 
   const variant = product.variants?.[0];
 
@@ -27,11 +38,18 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <motion.div
+      onMouseEnter={() => {
+        queryClient.prefetchQuery({
+          queryKey: ["product", product.slug],
+          queryFn: () => ProductService.getBySlug(product.slug),
+          staleTime: 1000 * 60 * 5,
+        });
+      }}
       whileHover={{ y: -6 }}
       transition={{ duration: 0.3 }}
       className="group"
     >
-      <Link href={`/products/${product.slug}`}>
+      <Link href={`/products/${product.slug}`} prefetch>
         <div className="overflow-hidden rounded-[30px] bg-white shadow-sm transition duration-300 hover:shadow-xl">
           {/* IMAGE */}
           <div className="relative aspect-[4/5] overflow-hidden">

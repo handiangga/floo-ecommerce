@@ -29,7 +29,7 @@ export default function Categories() {
   }
 
   return (
-    <section className="py-24">
+    <section className="border-b border-[#e9e2d8] py-24">
       <div className="container-custom">
         <div className="mb-14 text-center">
           <p className="text-primary tracking-[0.35em] uppercase text-sm">

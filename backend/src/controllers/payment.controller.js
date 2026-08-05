@@ -43,6 +43,23 @@ class PaymentController {
     }
   }
 
+  async createMyPayment(req, res) {
+    try {
+      const payment = await PaymentService.createForCustomer(
+        req.params.orderId,
+        req.customer.id,
+      );
+
+      return ResponseHelper.created(
+        res,
+        payment,
+        "Payment created successfully",
+      );
+    } catch (err) {
+      return ResponseHelper.badRequest(res, err.message);
+    }
+  }
+
   // =====================================================
   // ADMIN
   // =====================================================

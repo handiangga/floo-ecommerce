@@ -9,7 +9,9 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("access_token");
+    const token = window.location.pathname.startsWith("/admin")
+      ? localStorage.getItem("admin_access_token")
+      : localStorage.getItem("access_token");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -23,7 +25,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("access_token");
+      const isAdminPage = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+      localStorage.removeItem(isAdminPage ? "admin_access_token" : "access_token");
     }
 
     return Promise.reject(error);

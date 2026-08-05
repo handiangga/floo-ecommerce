@@ -1,0 +1,7 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import { AdminService } from "@/services/admin.service";
+type Review = { id: number; rating: number; comment?: string; customer?: { name: string }; product?: { name: string } };
+export default function ReviewsPage() { const router = useRouter(); const [items, setItems] = useState<Review[]>([]); const load = () => AdminService.reviews().then((r) => setItems(r.data ?? [])); useEffect(() => { if (!localStorage.getItem("admin_access_token")) router.replace("/admin/login"); else load().catch(() => router.replace("/admin/login")); }, [router]); return <div className="flex min-h-screen bg-muted"><AdminSidebar /><main className="flex-1 p-6 md:p-10"><h1 className="font-luxury text-4xl">Reviews</h1><div className="mt-6 space-y-3">{items.map((item) => <div key={item.id} className="rounded-2xl bg-white p-5"><div className="flex justify-between"><strong>{item.product?.name ?? "Product"}</strong><span>{"★".repeat(item.rating)}</span></div><p className="mt-2 text-sm text-muted-foreground">{item.customer?.name ?? "Customer"} · {item.comment}</p><div className="mt-4 flex gap-3"><button onClick={() => AdminService.approveReview(item.id).then(load)} className="text-primary">Approve</button><button onClick={() => AdminService.rejectReview(item.id).then(load)} className="text-destructive">Reject</button></div></div>)}</div></main></div>; }

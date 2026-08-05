@@ -5,6 +5,8 @@ import BestSeller from "@/components/home/BestSeller";
 import NewArrival from "@/components/home/NewArrival";
 import Story from "@/components/home/Story";
 import Featured from "@/components/home/Featured";
+import Review from "@/components/home/Review";
+import Instagram from "@/components/home/Instagram";
 
 export default function Home() {
   return (
@@ -20,6 +22,8 @@ export default function Home() {
       <Story />
 
       <NewArrival />
+      <Review />
+      <Instagram />
     </MainLayout>
   );
 }

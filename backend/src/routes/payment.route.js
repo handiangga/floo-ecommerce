@@ -21,6 +21,12 @@ const {
 
 router.get("/my", customerAuthentication, PaymentController.getMyPayments);
 
+router.post(
+  "/my/order/:orderId",
+  customerAuthentication,
+  PaymentController.createMyPayment,
+);
+
 router.get(
   "/my/:id",
   customerAuthentication,
