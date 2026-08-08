@@ -4,7 +4,31 @@ const bcrypt = require("bcrypt");
 
 module.exports = {
   async up(queryInterface) {
-    await queryInterface.bulkInsert("Users", [
+    const isProduction = process.env.NODE_ENV === "production";
+    const ownerPassword = process.env.INITIAL_OWNER_PASSWORD;
+
+    if (isProduction && (!ownerPassword || ownerPassword.length < 12)) {
+      throw new Error(
+        "INITIAL_OWNER_PASSWORD with at least 12 characters is required for production seeding",
+      );
+    }
+
+    const users = isProduction
+      ? [
+          {
+            role_id: 1,
+            name: process.env.INITIAL_OWNER_NAME || "Floo Owner",
+            email: process.env.INITIAL_OWNER_EMAIL || "owner@floofashionn.com",
+            phone: process.env.INITIAL_OWNER_PHONE || "",
+            password: bcrypt.hashSync(ownerPassword, 12),
+            photo: null,
+            last_login: null,
+            status: "ACTIVE",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]
+      : [
       {
         role_id: 1,
         name: "Owner",
@@ -41,7 +65,9 @@ module.exports = {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-    ]);
+    ];
+
+    await queryInterface.bulkInsert("Users", users);
   },
 
   async down(queryInterface) {

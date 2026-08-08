@@ -27,7 +27,7 @@ export default function Footer() {
         <div className="grid gap-12 md:grid-cols-4">
           {/* Brand */}
           <div>
-            <h2 className="font-luxury text-4xl text-[#e6c18d]">FLOO</h2>
+            <Link href="/about" className="font-luxury text-4xl text-[#e6c18d] transition hover:text-white">FLOO</Link>
 
             <p className="mt-4 text-sm leading-7 text-white/65">
               Luxury Modest Wear crafted for every beautiful moment. Discover
@@ -114,6 +114,7 @@ export default function Footer() {
               <a
                 href="https://wa.me/6281393354305"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 text-sm text-white/65 transition hover:text-[#e6c18d]"
               >
                 <Phone size={18} />
@@ -140,6 +141,7 @@ export default function Footer() {
               <a
                 href="https://www.tiktok.com/@floo_fashionn"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 text-sm text-white/65 transition hover:text-[#e6c18d]"
               >
                 <svg
@@ -156,6 +158,7 @@ export default function Footer() {
               <a
                 href="https://shopee.co.id/floo_fashionn"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 text-sm text-white/65 transition hover:text-[#e6c18d]"
               >
                 <ShoppingBag size={18} />
@@ -171,7 +174,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/15 pt-6 text-center text-sm text-white/50">
-          © {new Date().getFullYear()} Floo Fashionn. All Rights Reserved.
+          (c) {new Date().getFullYear()} Floo Fashion. All Rights Reserved.
         </div>
       </div>
     </footer>

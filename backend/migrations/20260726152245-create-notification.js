@@ -1,86 +1,95 @@
 "use strict";
 
-/** @type {import('sequelize-cli').Migration} */
+/**
+ * Upgrade the initial Notifications table instead of creating it a second time.
+ * This migration must remain safe for an empty production database.
+ */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Notifications", {
-      id: {
-        type: Sequelize.BIGINT,
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-      },
+    const tables = await queryInterface.showAllTables();
+    const hasNotifications = tables.some(
+      (table) => String(table).toLowerCase() === "notifications",
+    );
 
-      customer_id: {
-        type: Sequelize.BIGINT,
-        allowNull: true,
-        references: {
-          model: "Customers",
-          key: "id",
+    if (!hasNotifications) {
+      await queryInterface.createTable("Notifications", {
+        id: {
+          type: Sequelize.BIGINT,
+          allowNull: false,
+          autoIncrement: true,
+          primaryKey: true,
         },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
-      },
-
-      user_id: {
-        type: Sequelize.BIGINT,
-        allowNull: true,
-        references: {
-          model: "Users",
-          key: "id",
+        customer_id: {
+          type: Sequelize.BIGINT,
+          allowNull: true,
         },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
-      },
+        user_id: {
+          type: Sequelize.BIGINT,
+          allowNull: true,
+        },
+        title: {
+          type: Sequelize.STRING(255),
+          allowNull: false,
+        },
+        message: {
+          type: Sequelize.TEXT,
+          allowNull: false,
+        },
+        type: {
+          type: Sequelize.STRING,
+          allowNull: false,
+        },
+        is_read: {
+          type: Sequelize.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
+        reference_id: {
+          type: Sequelize.BIGINT,
+          allowNull: true,
+        },
+        createdAt: {
+          type: Sequelize.DATE,
+          allowNull: false,
+        },
+        updatedAt: {
+          type: Sequelize.DATE,
+          allowNull: false,
+        },
+      });
+      return;
+    }
 
-      title: {
-        type: Sequelize.STRING(255),
-        allowNull: false,
-      },
+    const columns = await queryInterface.describeTable("Notifications");
 
-      message: {
-        type: Sequelize.TEXT,
-        allowNull: false,
-      },
-
-      type: {
-        type: Sequelize.ENUM(
-          "ORDER",
-          "PAYMENT",
-          "SHIPMENT",
-          "PROMOTION",
-          "SYSTEM",
-        ),
-        allowNull: false,
-      },
-
-      is_read: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-      },
-
-      reference_id: {
+    if (!columns.user_id) {
+      await queryInterface.addColumn("Notifications", "user_id", {
         type: Sequelize.BIGINT,
         allowNull: true,
-      },
+      });
+    }
 
-      createdAt: {
-        allowNull: false,
-        type: Sequelize.DATE,
-      },
-
-      updatedAt: {
-        allowNull: false,
-        type: Sequelize.DATE,
-      },
-    });
+    if (!columns.reference_id) {
+      await queryInterface.addColumn("Notifications", "reference_id", {
+        type: Sequelize.BIGINT,
+        allowNull: true,
+      });
+    }
   },
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("Notifications");
-    await queryInterface.sequelize.query(
-      'DROP TYPE IF EXISTS "enum_Notifications_type";',
+  async down(queryInterface) {
+    const tables = await queryInterface.showAllTables();
+    const hasNotifications = tables.some(
+      (table) => String(table).toLowerCase() === "notifications",
     );
+    if (!hasNotifications) return;
+
+    const columns = await queryInterface.describeTable("Notifications");
+    if (columns.reference_id) {
+      await queryInterface.removeColumn("Notifications", "reference_id");
+    }
+    if (columns.user_id) {
+      await queryInterface.removeColumn("Notifications", "user_id");
+    }
   },
 };

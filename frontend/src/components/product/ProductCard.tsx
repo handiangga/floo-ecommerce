@@ -11,6 +11,7 @@ import { Product } from "@/types/product";
 import { ProductService } from "@/services/product.service";
 import { useCartActions } from "@/hooks/useCart";
 import { useWishlistActions } from "@/hooks/useWishlist";
+import { CustomerSession } from "@/lib/session";
 
 interface ProductCardProps {
   product: Product;
@@ -22,7 +23,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { add: addToCart } = useCartActions();
   const { add: addToWishlist } = useWishlistActions();
   const requireLogin = () => {
-    if (localStorage.getItem("access_token")) return true;
+    if (CustomerSession.has()) return true;
     router.push(`/login?next=${encodeURIComponent(`/products/${product.slug}`)}`);
     return false;
   };
@@ -37,7 +38,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const thumbnail =
     getImageUrl({ image_url: product.image_url }) ||
     getImageUrl(product.images?.[0]) ||
-    "/images/products/default-product.png";
+    "/images/products/floo-kebaya-rose-01.png";
 
   const hoverImage = getImageUrl(product.images?.[1]);
 

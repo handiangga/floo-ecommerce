@@ -7,6 +7,8 @@ const PaymentController = require("../controllers/payment.controller");
 const validate = require("../middlewares/validation");
 const authentication = require("../middlewares/authentication");
 const customerAuthentication = require("../middlewares/customer-authentication");
+const cronAuthentication = require("../middlewares/cron-authentication");
+const rateLimit = require("../middlewares/rate-limit");
 
 const {
   createPaymentSchema,
@@ -68,7 +70,11 @@ router.patch(
 |--------------------------------------------------------------------------
 */
 
-router.post("/webhook", PaymentController.webhook);
+router.post(
+  "/webhook",
+  rateLimit({ windowMs: 60 * 1000, max: 120, keyPrefix: "payment-webhook" }),
+  PaymentController.webhook,
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -76,6 +82,6 @@ router.post("/webhook", PaymentController.webhook);
 |--------------------------------------------------------------------------
 */
 
-router.post("/expire", PaymentController.expirePending);
+router.post("/expire", cronAuthentication, PaymentController.expirePending);
 
 module.exports = router;

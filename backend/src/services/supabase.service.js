@@ -26,6 +26,9 @@ class SupabaseService {
     }
 
     const bucket = DEFAULT_BUCKET;
+    if (!bucket) {
+      throw new Error("SUPABASE_BUCKET is required");
+    }
 
     const fileName = this.generateFileName(file.originalname);
 
@@ -52,6 +55,9 @@ class SupabaseService {
 
   async remove(filePath, bucket = DEFAULT_BUCKET) {
     if (!filePath) return true;
+    if (!bucket) {
+      throw new Error("SUPABASE_BUCKET is required");
+    }
 
     const { error } = await supabase.storage.from(bucket).remove([filePath]);
 

@@ -9,6 +9,7 @@ import Loading from "@/components/common/Loading";
 import { CustomerAuthService } from "@/services/auth.service";
 import { AddressPayload, AddressService } from "@/services/address.service";
 import { Customer } from "@/types/customer";
+import { CustomerSession } from "@/lib/session";
 
 type Address = AddressPayload & { id: number };
 
@@ -21,7 +22,7 @@ export default function AccountPage() {
   const loadAddresses = () => AddressService.getAll().then((result) => setAddresses(result.data ?? []));
 
   useEffect(() => {
-    if (!localStorage.getItem("access_token")) {
+    if (!CustomerSession.has()) {
       router.replace("/login?next=/account");
       return;
     }
@@ -61,9 +62,13 @@ export default function AccountPage() {
     try { await AddressService.create(payload); event.currentTarget.reset(); await loadAddresses(); setMessage("Alamat berhasil ditambahkan."); } catch { setMessage("Alamat belum dapat ditambahkan. Lengkapi seluruh data wajib."); }
   };
 
-  const logout = () => {
-    localStorage.removeItem("access_token");
-    router.replace("/");
+  const logout = async () => {
+    try {
+      await CustomerAuthService.logout();
+    } finally {
+      CustomerSession.clear();
+      router.replace("/");
+    }
   };
 
   if (profile === undefined) return <MainLayout><Loading /></MainLayout>;

@@ -4,11 +4,21 @@ module.exports = {
   register: Joi.object({
     name: Joi.string().min(2).max(100).required(),
 
-    email: Joi.string().email().required(),
+    email: Joi.string().email().lowercase().trim().required(),
 
     phone: Joi.string().min(8).max(20).required(),
 
-    password: Joi.string().min(6).required(),
+    password: Joi.string()
+      .min(8)
+      .max(128)
+      .pattern(/[a-z]/)
+      .pattern(/[A-Z]/)
+      .pattern(/[0-9]/)
+      .required()
+      .messages({
+        "string.pattern.base":
+          "Password must contain uppercase, lowercase, and number",
+      }),
 
     gender: Joi.string().valid("MALE", "FEMALE").optional(),
 
@@ -20,7 +30,7 @@ module.exports = {
   }),
 
   login: Joi.object({
-    email: Joi.string().email().required(),
+    email: Joi.string().email().lowercase().trim().required(),
 
     password: Joi.string().required(),
   }),
@@ -28,7 +38,7 @@ module.exports = {
   updateProfile: Joi.object({
     name: Joi.string().min(2).max(100),
 
-    email: Joi.string().email(),
+    email: Joi.string().email().lowercase().trim(),
 
     phone: Joi.string().min(8).max(20),
 
@@ -42,6 +52,16 @@ module.exports = {
   changePassword: Joi.object({
     old_password: Joi.string().required(),
 
-    new_password: Joi.string().min(6).required(),
+    new_password: Joi.string()
+      .min(8)
+      .max(128)
+      .pattern(/[a-z]/)
+      .pattern(/[A-Z]/)
+      .pattern(/[0-9]/)
+      .required()
+      .messages({
+        "string.pattern.base":
+          "Password must contain uppercase, lowercase, and number",
+      }),
   }),
 };

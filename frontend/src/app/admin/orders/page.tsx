@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Search, Truck } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AdminService } from "@/services/admin.service";
+import { AdminSession } from "@/lib/session";
 
 type Order = { id: number; invoice: string; status: string; total: number; customer?: { name: string; email?: string } };
 const states = ["ALL", "WAITING_PAYMENT", "PAID", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED"];
@@ -12,7 +13,7 @@ const text = (value: string) => value === "ALL" ? "Semua" : value.replaceAll("_"
 export default function AdminOrdersPage() {
   const router = useRouter(); const [orders, setOrders] = useState<Order[]>([]); const [filter, setFilter] = useState("ALL"); const [search, setSearch] = useState(""); const [shipping, setShipping] = useState<Order | null>(null); const [message, setMessage] = useState("");
   const load = () => AdminService.orders().then((result) => setOrders(result.data ?? []));
-  useEffect(() => { if (!localStorage.getItem("admin_access_token")) { router.replace("/admin/login"); return; } load().catch(() => setMessage("Pesanan belum dapat dimuat.")); }, [router]);
+  useEffect(() => { if (!AdminSession.has()) { router.replace("/admin/login"); return; } load().catch(() => setMessage("Pesanan belum dapat dimuat.")); }, [router]);
   const visible = useMemo(() => orders.filter((order) => (filter === "ALL" || order.status === filter) && (order.invoice + " " + (order.customer?.name ?? "")).toLowerCase().includes(search.toLowerCase())), [orders, filter, search]);
   const update = (order: Order, status: string) => AdminService.updateOrderStatus(order.id, status).then(load).catch(() => setMessage("Status belum dapat diperbarui."));
   const ship = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!shipping) return; const data = new FormData(event.currentTarget); AdminService.updateOrderStatus(shipping.id, "SHIPPED", { courier_service: String(data.get("courier")), tracking_number: String(data.get("resi")) }).then(() => { setShipping(null); load(); }).catch(() => setMessage("Kurir dan nomor resi wajib diisi.")); };

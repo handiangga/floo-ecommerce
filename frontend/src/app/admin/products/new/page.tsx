@@ -8,6 +8,7 @@ import { ImagePlus } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AdminService } from "@/services/admin.service";
 import { Category } from "@/types/category";
+import { AdminSession } from "@/lib/session";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function NewProductPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem("admin_access_token")) {
+    if (!AdminSession.has()) {
       router.replace("/admin/login");
       return;
     }

@@ -12,23 +12,27 @@ import { Navigation, Pagination, Autoplay, EffectFade } from "swiper/modules";
 import { motion } from "framer-motion";
 
 import Loading from "@/components/common/Loading";
-import Empty from "@/components/common/Empty";
-
 import { useBanners } from "@/hooks/useBanner";
 import { Banner } from "@/types/banner";
+
+const fallbackBanner: Banner = {
+  id: "floo-campaign-2026",
+  title: "Elegance in Every Detail",
+  description: "Kebaya premium dengan detail mewah, dirancang untuk momen berharga Anda.",
+  image: "/images/hero/floo-campaign-2026.png",
+  link: "/new-arrival",
+  button_text: "Shop Collection",
+  sort_order: 0,
+};
 
 export default function Hero() {
   const { data, isLoading, isError } = useBanners();
 
   if (isLoading) return <Loading />;
 
-  if (isError) return <Empty title="Failed to load banner" />;
-
-  const banners: Banner[] = data?.data?.data || [];
-
-  if (banners.length === 0) {
-    return <Empty title="Banner not found" />;
-  }
+  const fetchedBanners: Banner[] = !isError ? data?.data?.data || [] : [];
+  const banners = fetchedBanners.filter((banner) => banner.image?.trim());
+  const visibleBanners = banners.length ? banners : [fallbackBanner];
 
   return (
     <Swiper
@@ -46,7 +50,7 @@ export default function Hero() {
       navigation
       className="h-[92vh] min-h-[680px]"
     >
-      {banners.filter((banner) => banner.image?.trim()).map((banner) => (
+      {visibleBanners.map((banner) => (
         <SwiperSlide key={banner.id}>
           <section className="relative h-[92vh] min-h-[680px] overflow-hidden">
             <motion.div

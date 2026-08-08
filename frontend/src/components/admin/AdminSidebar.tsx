@@ -9,6 +9,7 @@ import {
 
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { AdminSession } from "@/lib/session";
+import { AdminService } from "@/services/admin.service";
 
 const links = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
@@ -30,9 +31,13 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const logout = () => {
-    AdminSession.clear();
-    router.replace("/admin/login");
+  const logout = async () => {
+    try {
+      await AdminService.logout();
+    } finally {
+      AdminSession.clear();
+      router.replace("/admin/login");
+    }
   };
 
   const navigation = (mobile = false) => (

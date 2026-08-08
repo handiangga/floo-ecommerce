@@ -51,7 +51,7 @@ export default function Categories() {
                 <div className="group relative h-[260px] overflow-hidden bg-[#2d241f] shadow-sm sm:h-[310px] lg:h-full lg:min-h-[250px]">
                   <div className="absolute inset-0">
                     <Image
-                      src={item.image || "/images/category/default.png"}
+                      src={item.image || "/images/products/floo-kebaya-rose-01.png"}
                       alt={item.name}
                       fill
                       sizes="(max-width:768px) 100vw,

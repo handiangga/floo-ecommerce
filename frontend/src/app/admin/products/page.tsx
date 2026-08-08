@@ -9,6 +9,7 @@ import { Edit3, Plus, Search, Trash2 } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AdminService } from "@/services/admin.service";
 import { Product } from "@/types/product";
+import { AdminSession } from "@/lib/session";
 
 const fallbackImage = "/images/products/default-product.png";
 
@@ -28,7 +29,7 @@ export default function AdminProductsPage() {
   };
 
   useEffect(() => {
-    if (!localStorage.getItem("admin_access_token")) {
+    if (!AdminSession.has()) {
       router.replace("/admin/login");
       return;
     }

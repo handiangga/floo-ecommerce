@@ -2,6 +2,7 @@ import api from "@/lib/api";
 
 export const AdminService = {
   login: (email: string, password: string) => api.post("/auth/login", { email, password }).then((response) => response.data),
+  logout: () => api.post("/auth/logout").then((response) => response.data),
   dashboard: () => api.get("/dashboard").then((response) => response.data),
   dashboardRevenue: () => api.get("/dashboard/revenue").then((response) => response.data),
   dashboardOrderStatistics: () => api.get("/dashboard/orders").then((response) => response.data),

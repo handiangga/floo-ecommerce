@@ -1,18 +1,36 @@
-export const CUSTOMER_TOKEN_KEY = "access_token";
-export const ADMIN_TOKEN_KEY = "admin_access_token";
+export const CUSTOMER_SESSION_KEY = "floo_customer_session";
+export const ADMIN_SESSION_KEY = "floo_admin_session";
 
 const canUseStorage = () => typeof window !== "undefined";
 
 export const CustomerSession = {
-  get: () => canUseStorage() ? localStorage.getItem(CUSTOMER_TOKEN_KEY) : null,
-  has: () => Boolean(CustomerSession.get()),
-  save: (token: string) => { if (canUseStorage()) localStorage.setItem(CUSTOMER_TOKEN_KEY, token); },
-  clear: () => { if (canUseStorage()) localStorage.removeItem(CUSTOMER_TOKEN_KEY); },
+  has: () => canUseStorage() && localStorage.getItem(CUSTOMER_SESSION_KEY) === "1",
+  save: () => {
+    if (canUseStorage()) {
+      localStorage.removeItem("access_token");
+      localStorage.setItem(CUSTOMER_SESSION_KEY, "1");
+    }
+  },
+  clear: () => {
+    if (canUseStorage()) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem(CUSTOMER_SESSION_KEY);
+    }
+  },
 };
 
 export const AdminSession = {
-  get: () => canUseStorage() ? localStorage.getItem(ADMIN_TOKEN_KEY) : null,
-  has: () => Boolean(AdminSession.get()),
-  save: (token: string) => { if (canUseStorage()) localStorage.setItem(ADMIN_TOKEN_KEY, token); },
-  clear: () => { if (canUseStorage()) localStorage.removeItem(ADMIN_TOKEN_KEY); },
+  has: () => canUseStorage() && localStorage.getItem(ADMIN_SESSION_KEY) === "1",
+  save: () => {
+    if (canUseStorage()) {
+      localStorage.removeItem("admin_access_token");
+      localStorage.setItem(ADMIN_SESSION_KEY, "1");
+    }
+  },
+  clear: () => {
+    if (canUseStorage()) {
+      localStorage.removeItem("admin_access_token");
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+    }
+  },
 };

@@ -1,7 +1,21 @@
 const ResponseHelper = require("../helpers/response.helper");
 
 module.exports = (err, req, res, next) => {
-  console.error(err);
+  console.error({
+    message: err.message,
+    name: err.name,
+    path: req.originalUrl,
+    method: req.method,
+  });
+
+  if (err.name === "MulterError") {
+    return ResponseHelper.validation(res, [
+      {
+        field: err.field || "image",
+        message: "Upload image is invalid or exceeds the allowed limit",
+      },
+    ]);
+  }
 
   if (err.name === "SequelizeValidationError") {
     return ResponseHelper.validation(
@@ -17,5 +31,10 @@ module.exports = (err, req, res, next) => {
     return ResponseHelper.conflict(res, err.errors[0].message);
   }
 
-  return ResponseHelper.error(res, err.message || "Internal Server Error");
+  const message =
+    process.env.NODE_ENV === "production"
+      ? "Internal Server Error"
+      : err.message || "Internal Server Error";
+
+  return ResponseHelper.error(res, message);
 };

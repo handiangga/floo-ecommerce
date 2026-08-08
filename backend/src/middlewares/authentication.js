@@ -7,16 +7,19 @@ const ResponseHelper = require("../helpers/response.helper");
 module.exports = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    const headerToken =
+      authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : null;
+    const token = req.cookies?.floo_admin_token || headerToken;
 
-    if (!authHeader) {
+    if (!token) {
       return ResponseHelper.unauthorized(res, "Access token required");
     }
 
-    if (!authHeader.startsWith("Bearer ")) {
+    if (authHeader && !headerToken) {
       return ResponseHelper.unauthorized(res, "Invalid token format");
     }
-
-    const token = authHeader.split(" ")[1];
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 

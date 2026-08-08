@@ -12,7 +12,7 @@ const menus = [
   { name: "Couple", href: "/couple" },
   { name: "Big Size", href: "/big-size" },
   { name: "Sale", href: "/sale" },
-  { name: "About Us", href: "#floo-story" },
+  { name: "About Us", href: "/about" },
 ];
 
 const iconLinks = [

@@ -12,6 +12,8 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useProduct } from "@/hooks/useProduct";
 import { useCartActions } from "@/hooks/useCart";
 import { useWishlistActions } from "@/hooks/useWishlist";
+import type { ProductImage, ProductVariant } from "@/types/product";
+import { CustomerSession } from "@/lib/session";
 
 const formatPrice = (price: number) => `Rp${price.toLocaleString("id-ID")}`;
 
@@ -33,7 +35,7 @@ export default function ProductDetailPage() {
   const product = data.data;
   const variant = product.variants?.[selectedVariant];
   const price = variant?.discount_price ?? variant?.price ?? 0;
-  const images = (product.images ?? [])
+  const images = ((product.images ?? []) as ProductImage[])
     .map((image) => ({
       id: image.id,
       src: image.image_url?.trim() || image.image?.trim(),
@@ -47,7 +49,7 @@ export default function ProductDetailPage() {
     });
   }
   const requireLogin = () => {
-    if (!localStorage.getItem("access_token")) {
+    if (!CustomerSession.has()) {
       router.push(`/login?next=${encodeURIComponent(`/products/${params.slug}`)}`);
       return false;
     }
@@ -85,7 +87,7 @@ export default function ProductDetailPage() {
               <div className="mt-8">
                 <p className="font-medium">Choose variant</p>
                 <div className="mt-3 flex flex-wrap gap-3">
-                  {product.variants.map((item, index) => (
+                  {((product.variants ?? []) as ProductVariant[]).map((item, index) => (
                     <button key={item.id} type="button" onClick={() => { setSelectedVariant(index); setQuantity(1); }} className={`rounded-full border px-4 py-2 text-sm ${selectedVariant === index ? "border-primary bg-primary text-white" : "border-border hover:border-primary"}`}>
                       {item.color?.name ?? "Default"}{item.size ? ` · ${item.size.name}` : ""}
                     </button>

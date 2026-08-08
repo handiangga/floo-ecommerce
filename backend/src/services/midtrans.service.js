@@ -17,6 +17,12 @@ class MidtransService {
     });
   }
 
+  assertConfigured() {
+    if (!process.env.MIDTRANS_SERVER_KEY || !process.env.MIDTRANS_CLIENT_KEY) {
+      throw new Error("Midtrans is not configured");
+    }
+  }
+
   /**
    * ============================================================
    * CREATE SNAP TOKEN
@@ -24,6 +30,7 @@ class MidtransService {
    */
 
   async createSnap(order, customer) {
+    this.assertConfigured();
     const parameter = {
       transaction_details: {
         order_id: String(order.code || order.id),
@@ -60,6 +67,7 @@ class MidtransService {
    */
 
   async getStatus(transactionId) {
+    this.assertConfigured();
     return this.core.transaction.status(transactionId);
   }
 
@@ -70,6 +78,7 @@ class MidtransService {
    */
 
   async cancel(transactionId) {
+    this.assertConfigured();
     return this.core.transaction.cancel(transactionId);
   }
 
@@ -80,6 +89,7 @@ class MidtransService {
    */
 
   async expire(transactionId) {
+    this.assertConfigured();
     return this.core.transaction.expire(transactionId);
   }
 
@@ -90,6 +100,7 @@ class MidtransService {
    */
 
   async refund(transactionId, amount, reason = "Refund") {
+    this.assertConfigured();
     return this.core.transaction.refund(transactionId, {
       refund_key: `refund-${Date.now()}`,
       amount,
@@ -105,6 +116,9 @@ class MidtransService {
 
   verifySignature(payload) {
     const crypto = require("crypto");
+    if (!process.env.MIDTRANS_SERVER_KEY || !payload?.signature_key) {
+      return false;
+    }
 
     const hash = crypto
       .createHash("sha512")
@@ -116,7 +130,12 @@ class MidtransService {
       )
       .digest("hex");
 
-    return hash === payload.signature_key;
+    const expected = Buffer.from(hash);
+    const received = Buffer.from(payload.signature_key);
+    return (
+      expected.length === received.length &&
+      crypto.timingSafeEqual(expected, received)
+    );
   }
 }
 

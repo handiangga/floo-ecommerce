@@ -7,6 +7,8 @@ export const CustomerAuthService = {
     api
       .post("/customer-auth/login", { email, password })
       .then((response) => response.data),
+  logout: () =>
+    api.post("/customer-auth/logout").then((response) => response.data),
   profile: () =>
     api.get("/customer-auth/profile").then((response) => response.data),
   updateProfile: (payload: {

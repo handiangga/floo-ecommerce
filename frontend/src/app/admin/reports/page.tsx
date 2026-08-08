@@ -1,31 +1,25 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { BarChart3, CalendarDays, Download, FileText, UsersRound } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AdminService } from "@/services/admin.service";
+import { AdminSession } from "@/lib/session";
 
-const types = ["sales", "products", "customers", "payments", "orders"];
+const reportTypes = [{ value: "sales", label: "Penjualan", icon: BarChart3 }, { value: "products", label: "Produk", icon: FileText }, { value: "customers", label: "Customer", icon: UsersRound }, { value: "payments", label: "Pembayaran", icon: CalendarDays }, { value: "orders", label: "Status Order", icon: BarChart3 }];
 
 export default function ReportsPage() {
+  const router = useRouter();
   const [type, setType] = useState("sales");
-  const [data, setData] = useState<unknown>(null);
+  const [data, setData] = useState<Record<string, unknown> | unknown[] | null>(null);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const rows = useMemo(() => Array.isArray(data) ? data : data ? [data] : [], [data]);
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  useEffect(() => { if (!AdminSession.has()) router.replace("/admin/login"); }, [router]);
+  const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = new FormData(event.currentTarget); setLoading(true); setMessage(""); try { const result = await AdminService.report(type, { start_date: String(form.get("start_date") || ""), end_date: String(form.get("end_date") || "") }); setData(result.data); } catch (reason: unknown) { const error = reason as { response?: { status?: number } }; if ([401, 403].includes(error.response?.status || 0)) { AdminSession.clear(); router.replace("/admin/login"); } else setMessage("Laporan belum dapat dimuat untuk periode tersebut."); } finally { setLoading(false); } };
+  const download = () => { if (!data) return; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "floo-" + type + "-report.json"; link.click(); URL.revokeObjectURL(url); };
 
-    try {
-      const result = await AdminService.report(type, {
-        start_date: String(form.get("start_date") || ""),
-        end_date: String(form.get("end_date") || ""),
-      });
-      setData(result.data);
-      setMessage("");
-    } catch {
-      setMessage("Unable to load report.");
-    }
-  };
-
-  return <div className="flex min-h-screen bg-muted"><AdminSidebar /><main className="flex-1 p-6 md:p-10"><div className="mx-auto max-w-5xl"><h1 className="font-luxury text-4xl">Reports</h1><form onSubmit={submit} className="mt-6 flex flex-wrap gap-3 rounded-2xl bg-white p-5"><select value={type} onChange={(event) => setType(event.target.value)} className="rounded border p-3">{types.map((item) => <option key={item} value={item}>{item}</option>)}</select><input name="start_date" type="date" className="rounded border p-3" /><input name="end_date" type="date" className="rounded border p-3" /><button className="rounded-full bg-primary px-5 text-white">Generate</button></form>{message && <p className="mt-4 text-destructive">{message}</p>}{data && <pre className="mt-6 overflow-auto rounded-2xl bg-white p-5 text-sm">{JSON.stringify(data, null, 2)}</pre>}</div></main></div>;
+  return <div className="flex min-h-screen bg-[#f8f5f1]"><AdminSidebar /><main className="min-w-0 flex-1 p-6 md:p-10"><div className="mx-auto max-w-7xl"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#806b59]">Business intelligence</p><h1 className="font-luxury text-4xl">Reports</h1><p className="mt-2 text-sm text-[#806b59]">Pilih jenis laporan dan periode untuk melihat performa toko.</p></div>{data && <button type="button" onClick={download} className="inline-flex items-center gap-2 border border-[#d9c2a8] bg-white px-4 py-3 text-sm text-[#604938]"><Download className="size-4" /> Export JSON</button>}</div><form onSubmit={(event) => void submit(event)} className="mt-6 border border-[#eadfd4] bg-white p-5 shadow-sm"><div className="grid gap-3 md:grid-cols-[1.3fr_1fr_1fr_auto]"><select value={type} onChange={(event) => setType(event.target.value)} className="border border-[#eadfd4] px-4 py-3 text-sm">{reportTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select><input required name="start_date" type="date" className="border border-[#eadfd4] px-4 py-3 text-sm" /><input required name="end_date" type="date" className="border border-[#eadfd4] px-4 py-3 text-sm" /><button disabled={loading} className="bg-[#2d241f] px-5 py-3 text-sm text-white disabled:opacity-60">{loading ? "Memuat..." : "Buat Laporan"}</button></div></form>{message && <p className="mt-5 border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{message}</p>}<div className="mt-6 grid gap-4 md:grid-cols-5">{reportTypes.map(({ value, label, icon: Icon }) => <button key={value} type="button" onClick={() => setType(value)} className={"flex items-center gap-3 border p-4 text-left transition " + (type === value ? "border-[#b88a55] bg-[#fcf8f2]" : "border-[#eadfd4] bg-white hover:border-[#d5b18a]")}><Icon className="size-5 text-[#b88a55]" /><span className="text-sm">{label}</span></button>)}</div>{data ? <section className="mt-6 border border-[#eadfd4] bg-white shadow-sm"><div className="flex items-center justify-between border-b border-[#eee5dc] p-5"><div><h2 className="font-luxury text-2xl">Hasil Laporan</h2><p className="mt-1 text-xs text-[#806b59]">{rows.length} baris data tersedia</p></div><BarChart3 className="size-5 text-[#b88a55]" /></div><div className="overflow-auto p-5"><pre className="max-h-[520px] text-xs leading-6 text-[#5d4c40]">{JSON.stringify(data, null, 2)}</pre></div></section> : <section className="mt-6 grid min-h-72 place-items-center border border-dashed border-[#d9c8b7] bg-[#fcfaf7] text-center"><div><BarChart3 className="mx-auto size-9 text-[#c4a27b]" /><h2 className="mt-4 font-luxury text-3xl">Laporan siap dibuat</h2><p className="mt-2 text-sm text-[#806b59]">Pilih jenis laporan dan periode di atas.</p></div></section>}</div></main></div>;
 }
