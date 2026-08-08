@@ -9,6 +9,7 @@ const authentication = require("../middlewares/authentication");
 const customerAuthentication = require("../middlewares/customer-authentication");
 const cronAuthentication = require("../middlewares/cron-authentication");
 const rateLimit = require("../middlewares/rate-limit");
+const upload = require("../middlewares/upload");
 
 const {
   createPaymentSchema,
@@ -23,10 +24,23 @@ const {
 
 router.get("/my", customerAuthentication, PaymentController.getMyPayments);
 
+router.get(
+  "/my/order/:orderId",
+  customerAuthentication,
+  PaymentController.getMyPaymentByOrder,
+);
+
 router.post(
   "/my/order/:orderId",
   customerAuthentication,
   PaymentController.createMyPayment,
+);
+
+router.post(
+  "/my/:id/proof",
+  customerAuthentication,
+  upload.single("proof"),
+  PaymentController.submitMyProof,
 );
 
 router.get(
@@ -75,6 +89,9 @@ router.post(
   rateLimit({ windowMs: 60 * 1000, max: 120, keyPrefix: "payment-webhook" }),
   PaymentController.webhook,
 );
+
+router.post("/:id/approve-manual", authentication, PaymentController.approveManual);
+router.post("/:id/reject-manual", authentication, PaymentController.rejectManual);
 
 /*
 |--------------------------------------------------------------------------

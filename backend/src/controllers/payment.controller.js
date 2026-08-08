@@ -60,6 +60,31 @@ class PaymentController {
     }
   }
 
+  async getMyPaymentByOrder(req, res) {
+    try {
+      const payment = await PaymentService.getForCustomerOrder(
+        req.params.orderId,
+        req.customer.id,
+      );
+      return ResponseHelper.success(res, payment, "Payment fetched successfully");
+    } catch (err) {
+      return ResponseHelper.notFound(res, err.message);
+    }
+  }
+
+  async submitMyProof(req, res) {
+    try {
+      const payment = await PaymentService.submitProof(
+        req.params.id,
+        req.customer.id,
+        req.file,
+      );
+      return ResponseHelper.updated(res, payment, "Payment proof submitted");
+    } catch (err) {
+      return ResponseHelper.badRequest(res, err.message);
+    }
+  }
+
   // =====================================================
   // ADMIN
   // =====================================================
@@ -133,6 +158,32 @@ class PaymentController {
         payment,
         "Payment status updated successfully",
       );
+    } catch (err) {
+      return ResponseHelper.badRequest(res, err.message);
+    }
+  }
+
+  async approveManual(req, res) {
+    try {
+      const payment = await PaymentService.approveManual(
+        req.params.id,
+        req.user.id,
+        req.body.note || null,
+      );
+      return ResponseHelper.updated(res, payment, "Manual payment approved");
+    } catch (err) {
+      return ResponseHelper.badRequest(res, err.message);
+    }
+  }
+
+  async rejectManual(req, res) {
+    try {
+      const payment = await PaymentService.rejectManual(
+        req.params.id,
+        req.user.id,
+        req.body.note || null,
+      );
+      return ResponseHelper.updated(res, payment, "Manual payment needs revision");
     } catch (err) {
       return ResponseHelper.badRequest(res, err.message);
     }

@@ -1,6 +1,7 @@
 "use strict";
 
 const MidtransService = require("./midtrans.service");
+const SupabaseService = require("./supabase.service");
 const PaymentRepository = require("../repositories/payment.repository");
 const OrderRepository = require("../repositories/order.repository");
 
@@ -8,6 +9,7 @@ const PaginationHelper = require("../helpers/pagination.helper");
 
 const PAYMENT_STATUS = require("../constants/paymentStatus");
 const ORDER_STATUS = require("../constants/orderStatus");
+const MANUAL_METHODS = ["BANK_TRANSFER", "QRIS"];
 
 class PaymentService {
   async createForCustomer(orderId, customerId) {
@@ -86,6 +88,10 @@ class PaymentService {
       throw new Error("Payment already exists");
     }
 
+    if (MANUAL_METHODS.includes(payload.method)) {
+      return this.createManualPayment(order, transaction);
+    }
+
     const snap = await MidtransService.createSnap(order, order.customer || {});
 
     const payment = await PaymentRepository.create(
@@ -120,6 +126,104 @@ class PaymentService {
     );
 
     return PaymentRepository.findById(payment.id);
+  }
+
+  async createManualPayment(order, transaction = null) {
+    const payment = await PaymentRepository.create(
+      {
+        order_id: order.id,
+        method: order.payment_method,
+        provider: "MANUAL",
+        amount: order.total,
+        transaction_id: "MANUAL-" + order.invoice,
+        payment_code: "MANUAL-" + order.id,
+        expired_at: order.payment_deadline || new Date(Date.now() + 24 * 60 * 60 * 1000),
+        status: PAYMENT_STATUS.PENDING,
+      },
+      transaction,
+    );
+
+    return PaymentRepository.findById(payment.id);
+  }
+
+  async getForCustomerOrder(orderId, customerId) {
+    const order = await OrderRepository.findById(orderId);
+    if (!order || String(order.customer_id) !== String(customerId)) {
+      throw new Error("Order not found");
+    }
+
+    const payment = await PaymentRepository.findByOrder(order.id);
+    if (!payment) {
+      throw new Error("Payment not found");
+    }
+
+    return payment;
+  }
+
+  async submitProof(id, customerId, file) {
+    const payment = await PaymentRepository.findById(id);
+    if (!payment || String(payment.order.customer_id) !== String(customerId)) {
+      throw new Error("Payment not found");
+    }
+    if (payment.provider !== "MANUAL" || !MANUAL_METHODS.includes(payment.method)) {
+      throw new Error("Payment proof is only available for manual payments");
+    }
+    if (payment.status !== PAYMENT_STATUS.PENDING) {
+      throw new Error("Payment proof can no longer be submitted");
+    }
+
+    if (payment.proof_path) {
+      await SupabaseService.remove(payment.proof_path);
+    }
+
+    const upload = await SupabaseService.upload(file, "payment-proofs");
+    return PaymentRepository.update(id, {
+      proof_url: upload.public_url,
+      proof_path: upload.path,
+      proof_submitted_at: new Date(),
+      verification_note: null,
+      failed_reason: null,
+    });
+  }
+
+  async approveManual(id, userId, note = null) {
+    const payment = await PaymentRepository.findById(id);
+    if (!payment || payment.provider !== "MANUAL" || !payment.proof_url) {
+      throw new Error("Manual payment proof not found");
+    }
+    if (payment.status !== PAYMENT_STATUS.PENDING) {
+      throw new Error("Payment cannot be verified");
+    }
+
+    await PaymentRepository.update(id, {
+      status: PAYMENT_STATUS.PAID,
+      paid_at: new Date(),
+      verified_at: new Date(),
+      verified_by: userId,
+      verification_note: note,
+    });
+    await OrderRepository.update(payment.order_id, {
+      status: ORDER_STATUS.PAID,
+      paid_at: new Date(),
+    });
+
+    return PaymentRepository.findById(id);
+  }
+
+  async rejectManual(id, userId, note = null) {
+    const payment = await PaymentRepository.findById(id);
+    if (!payment || payment.provider !== "MANUAL") {
+      throw new Error("Manual payment not found");
+    }
+    if (payment.status !== PAYMENT_STATUS.PENDING) {
+      throw new Error("Payment cannot be reviewed");
+    }
+
+    return PaymentRepository.update(id, {
+      verified_by: userId,
+      verified_at: new Date(),
+      verification_note: note || "Bukti pembayaran belum dapat diverifikasi. Silakan unggah ulang.",
+    });
   }
 
   async pay(id, payload = {}) {

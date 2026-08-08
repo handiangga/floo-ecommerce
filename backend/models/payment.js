@@ -83,6 +83,22 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      proof_url: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      proof_path: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+      },
+      proof_submitted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      verification_note: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
 
       status: {
         type: DataTypes.ENUM(
