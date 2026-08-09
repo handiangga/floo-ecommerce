@@ -1,6 +1,10 @@
 import api from "@/lib/api";
 
 export const AdminService = {
+  storeSettings: () =>
+    api.get("/store-settings").then((response) => response.data),
+  updateStoreSettings: (payload: Record<string, string | boolean>) =>
+    api.put("/store-settings", payload).then((response) => response.data),
   login: (email: string, password: string) =>
     api
       .post("/auth/login", { email, password })
@@ -103,19 +107,36 @@ export const AdminService = {
       .then((response) => response.data),
   rejectManualPayment: (id: number) =>
     api.post(`/payments/${id}/reject-manual`).then((response) => response.data),
-  categories: () => api.get("/categories").then((response) => response.data),
+  categories: () =>
+    api.get("/categories", { params: { limit: 100 } }).then((response) => response.data),
   createCategory: (payload: {
     name: string;
-    description?: string;
+    parent_id?: number | null;
     sort_order?: number;
   }) => api.post("/categories", payload).then((response) => response.data),
+  updateCategory: (id: number, payload: { name: string; parent_id?: number | null; sort_order?: number }) =>
+    api.put(`/categories/${id}`, payload).then((response) => response.data),
   removeCategory: (id: number) =>
     api.delete(`/categories/${id}`).then((response) => response.data),
   banners: () => api.get("/banners").then((response) => response.data),
-  createBanner: (payload: { title: string; image?: string; link?: string }) =>
+  createBanner: (payload: FormData | Record<string, string>) =>
     api.post("/banners", payload).then((response) => response.data),
+  updateBanner: (id: number, payload: FormData | Record<string, string>) =>
+    api.put(`/banners/${id}`, payload).then((response) => response.data),
   removeBanner: (id: number) =>
     api.delete(`/banners/${id}`).then((response) => response.data),
+  homepageOccasions: () =>
+    api.get("/homepage-occasions").then((response) => response.data),
+  createHomepageOccasion: (payload: FormData | Record<string, string>) =>
+    api.post("/homepage-occasions", payload).then((response) => response.data),
+  updateHomepageOccasion: (id: number, payload: FormData | Record<string, string>) =>
+    api.put(`/homepage-occasions/${id}`, payload).then((response) => response.data),
+  removeHomepageOccasion: (id: number) =>
+    api.delete(`/homepage-occasions/${id}`).then((response) => response.data),
+  homepageCraftsmanship: () =>
+    api.get("/homepage-craftsmanship").then((response) => response.data),
+  updateHomepageCraftsmanship: (payload: FormData) =>
+    api.put("/homepage-craftsmanship", payload).then((response) => response.data),
   vouchers: () => api.get("/vouchers").then((response) => response.data),
   createVoucher: (payload: Record<string, string | number>) =>
     api.post("/vouchers", payload).then((response) => response.data),

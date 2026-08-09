@@ -12,6 +12,8 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: "CASCADE",
         onDelete: "RESTRICT",
       });
+      Category.belongsTo(models.Category, { foreignKey: "parent_id", as: "parent" });
+      Category.hasMany(models.Category, { foreignKey: "parent_id", as: "subcategories", onUpdate: "CASCADE", onDelete: "RESTRICT" });
     }
   }
 
@@ -27,7 +29,6 @@ module.exports = (sequelize, DataTypes) => {
       name: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        unique: true,
         validate: {
           notEmpty: {
             msg: "Category name is required",
@@ -48,6 +49,11 @@ module.exports = (sequelize, DataTypes) => {
             msg: "Slug is required",
           },
         },
+      },
+
+      parent_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
       },
 
       image: {
@@ -103,7 +109,7 @@ module.exports = (sequelize, DataTypes) => {
 
       hooks: {
         beforeValidate(category) {
-          if (category.name) {
+          if (category.name && !category.slug) {
             category.slug = slugify(category.name, {
               lower: true,
               strict: true,

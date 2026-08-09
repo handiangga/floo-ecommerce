@@ -73,6 +73,10 @@ app.get("/", (req, res) => {
 
 app.use(
   "/api/v1",
+  (req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  },
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: Number(process.env.API_RATE_LIMIT_MAX || 600),

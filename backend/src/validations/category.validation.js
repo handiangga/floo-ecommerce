@@ -4,6 +4,8 @@ module.exports = {
   create: Joi.object({
     name: Joi.string().min(2).max(100).required(),
 
+    parent_id: Joi.number().integer().positive().allow(null).optional(),
+
     image: Joi.string().allow(null, "").optional(),
 
     banner: Joi.string().allow(null, "").optional(),
@@ -19,6 +21,8 @@ module.exports = {
 
   update: Joi.object({
     name: Joi.string().min(2).max(100),
+
+    parent_id: Joi.number().integer().positive().allow(null),
 
     image: Joi.string().allow(null, ""),
 

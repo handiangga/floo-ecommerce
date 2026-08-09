@@ -30,6 +30,14 @@ type Address = {
   postal_code?: string;
   is_default?: boolean;
 };
+const keepOneHomeAddress = (values: Address[]) => {
+  const home =
+    values.find((address) => address.label === "HOME" && address.is_default) ||
+    values.find((address) => address.label === "HOME");
+  return values.filter(
+    (address) => address.label !== "HOME" || address.id === home?.id,
+  );
+};
 const money = (value: number) =>
   "Rp" + Number(value || 0).toLocaleString("id-ID");
 const couriers = [
@@ -59,7 +67,7 @@ export default function CheckoutPage() {
     }
     AddressService.getAll()
       .then((result) => {
-        const values = result.data || [];
+        const values = keepOneHomeAddress(result.data || []);
         setAddresses(values);
         if (values[0])
           setAddressId(

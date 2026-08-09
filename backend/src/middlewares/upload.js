@@ -3,7 +3,9 @@
 const multer = require("multer");
 const sharp = require("sharp");
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+// Images are optimized to WEBP after validation, but the original still needs
+// enough room to reach Sharp first. Ten megabytes is a safe admin upload limit.
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",

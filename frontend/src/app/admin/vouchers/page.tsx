@@ -6,9 +6,23 @@ import { Plus, TicketPercent, Trash2 } from "lucide-react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AdminService } from "@/services/admin.service";
 import { AdminSession } from "@/lib/session";
+import { confirmDelete, showError, showSuccess } from "@/lib/alert";
 
-type Voucher = { id: number; code: string; name: string; type: string; value: number; min_purchase?: number; max_discount?: number; quota?: number; used?: number; status?: string; end_date?: string };
-const money = (value?: number) => "Rp" + Number(value || 0).toLocaleString("id-ID");
+type Voucher = {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  value: number;
+  min_purchase?: number;
+  max_discount?: number;
+  quota?: number;
+  used?: number;
+  status?: string;
+  end_date?: string;
+};
+const money = (value?: number) =>
+  "Rp" + Number(value || 0).toLocaleString("id-ID");
 
 export default function VouchersPage() {
   const router = useRouter();
@@ -16,11 +30,251 @@ export default function VouchersPage() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const load = () => AdminService.vouchers().then((result) => setItems(result.data?.data || result.data || []));
+  const load = () =>
+    AdminService.vouchers().then((result) =>
+      setItems(result.data?.data || result.data || []),
+    );
 
-  useEffect(() => { if (!AdminSession.has()) { router.replace("/admin/login"); return; } load().catch((error: { response?: { status?: number } }) => { if ([401, 403].includes(error.response?.status || 0)) { AdminSession.clear(); router.replace("/admin/login"); } else setMessage("Voucher belum dapat dimuat."); }); }, [router]);
-  const add = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = new FormData(event.currentTarget); setSaving(true); setMessage(""); try { await AdminService.createVoucher({ code: String(form.get("code")).toUpperCase(), name: String(form.get("name")), type: String(form.get("type")), value: Number(form.get("value")), min_purchase: Number(form.get("min_purchase")), max_discount: Number(form.get("max_discount")), quota: Number(form.get("quota")), start_date: String(form.get("start_date")), end_date: String(form.get("end_date")) }); event.currentTarget.reset(); setShowForm(false); await load(); } catch { setMessage("Voucher belum dapat disimpan. Periksa tanggal dan nominalnya."); } finally { setSaving(false); } };
-  const remove = async (id: number) => { if (!window.confirm("Hapus voucher ini?")) return; try { await AdminService.removeVoucher(id); await load(); } catch { setMessage("Voucher belum dapat dihapus."); } };
+  useEffect(() => {
+    if (!AdminSession.has()) {
+      router.replace("/admin/login");
+      return;
+    }
+    load().catch((error: { response?: { status?: number } }) => {
+      if ([401, 403].includes(error.response?.status || 0)) {
+        AdminSession.clear();
+        router.replace("/admin/login");
+      } else setMessage("Voucher belum dapat dimuat.");
+    });
+  }, [router]);
+  const add = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setSaving(true);
+    setMessage("");
+    try {
+      await AdminService.createVoucher({
+        code: String(form.get("code")).toUpperCase(),
+        name: String(form.get("name")),
+        type: String(form.get("type")),
+        value: Number(form.get("value")),
+        min_purchase: Number(form.get("min_purchase")),
+        max_discount: Number(form.get("max_discount")),
+        quota: Number(form.get("quota")),
+        start_date: String(form.get("start_date")),
+        end_date: String(form.get("end_date")),
+      });
+      event.currentTarget.reset();
+      setShowForm(false);
+      await load();
+    } catch {
+      setMessage(
+        "Voucher belum dapat disimpan. Periksa tanggal dan nominalnya.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+  const remove = async (id: number) => {
+    if (!(await confirmDelete("voucher"))) return;
+    try {
+      await AdminService.removeVoucher(id);
+      await load();
+      await showSuccess("Voucher berhasil dihapus");
+    } catch {
+      setMessage("Voucher belum dapat dihapus.");
+      await showError("Voucher belum dapat dihapus");
+    }
+  };
 
-  return <div className="flex min-h-screen bg-[#f8f5f1]"><AdminSidebar /><main className="min-w-0 flex-1 p-6 md:p-10"><div className="mx-auto max-w-7xl"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#806b59]">Promotion center</p><h1 className="font-luxury text-4xl">Vouchers</h1><p className="mt-2 text-sm text-[#806b59]">Atur promo untuk meningkatkan pembelian pelanggan.</p></div><button type="button" onClick={() => setShowForm((value) => !value)} className="inline-flex items-center gap-2 bg-[#b88a55] px-4 py-3 text-sm text-white"><Plus className="size-4" /> Buat Voucher</button></div>{message && <p className="mt-5 border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{message}</p>}{showForm && <form onSubmit={(event) => void add(event)} className="mt-6 border border-[#eadfd4] bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-full bg-[#f5eadb] text-[#b88a55]"><TicketPercent className="size-5" /></span><div><h2 className="font-luxury text-2xl">Voucher Baru</h2><p className="text-xs text-muted-foreground">Tentukan periode promo, nominal, dan kuota penggunaan.</p></div></div><div className="mt-5 grid gap-3 md:grid-cols-3"><input required name="code" placeholder="FLOO10" className="border border-[#eadfd4] px-4 py-3 text-sm" /><input required name="name" placeholder="Nama promo" className="border border-[#eadfd4] px-4 py-3 text-sm" /><select name="type" className="border border-[#eadfd4] px-4 py-3 text-sm"><option value="PERCENTAGE">Persentase (%)</option><option value="FIXED">Potongan harga</option></select><input required name="value" type="number" min="1" placeholder="Nilai promo" className="border border-[#eadfd4] px-4 py-3 text-sm" /><input required name="min_purchase" type="number" min="0" placeholder="Min. pembelian" className="border border-[#eadfd4] px-4 py-3 text-sm" /><input required name="max_discount" type="number" min="0" placeholder="Maks. diskon" className="border border-[#eadfd4] px-4 py-3 text-sm" /><input required name="quota" type="number" min="0" placeholder="Kuota (0 = tanpa batas)" className="border border-[#eadfd4] px-4 py-3 text-sm" /><input required name="start_date" type="date" className="border border-[#eadfd4] px-4 py-3 text-sm" /><input required name="end_date" type="date" className="border border-[#eadfd4] px-4 py-3 text-sm" /></div><div className="mt-4 flex justify-end gap-3"><button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-[#806b59]">Batal</button><button disabled={saving} className="bg-[#2d241f] px-5 py-2.5 text-sm text-white disabled:opacity-60">{saving ? "Menyimpan..." : "Simpan Voucher"}</button></div></form>}<section className="mt-6 overflow-hidden border border-[#eadfd4] bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left text-sm"><thead className="bg-[#fcfaf7] text-[11px] uppercase tracking-[.12em] text-[#806b59]"><tr><th className="p-4">Voucher</th><th className="p-4">Diskon</th><th className="p-4">Syarat</th><th className="p-4">Penggunaan</th><th className="p-4">Status</th><th className="p-4 text-right">Aksi</th></tr></thead><tbody>{items.map((item) => <tr key={item.id} className="border-t border-[#eee5dc]"><td className="p-4"><p className="font-semibold tracking-[.08em] text-[#a07750]">{item.code}</p><p className="mt-1 text-xs text-[#806b59]">{item.name}</p></td><td className="p-4">{item.type === "PERCENTAGE" ? item.value + "%" : money(item.value)}</td><td className="p-4 text-xs text-[#806b59]">Min. {money(item.min_purchase)}<br />Maks. {money(item.max_discount)}</td><td className="p-4 text-xs">{item.used || 0} / {item.quota || "∞"}</td><td className="p-4"><span className="bg-[#edf4e8] px-2.5 py-1 text-xs text-[#6d9855]">{item.status || "ACTIVE"}</span></td><td className="p-4 text-right"><button type="button" onClick={() => void remove(item.id)} className="inline-flex items-center gap-1 text-xs text-rose-600"><Trash2 className="size-4" /> Hapus</button></td></tr>)}</tbody></table></div>{!items.length && <div className="p-12 text-center text-sm text-[#806b59]">Belum ada voucher aktif.</div>}</section></div></main></div>;
+  return (
+    <div className="flex min-h-screen bg-[#f8f5f1]">
+      <AdminSidebar />
+      <main className="min-w-0 flex-1 p-6 md:p-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-sm text-[#806b59]">Promotion center</p>
+              <h1 className="font-luxury text-4xl">Vouchers</h1>
+              <p className="mt-2 text-sm text-[#806b59]">
+                Atur promo untuk meningkatkan pembelian pelanggan.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowForm((value) => !value)}
+              className="inline-flex items-center gap-2 bg-[#b88a55] px-4 py-3 text-sm text-white"
+            >
+              <Plus className="size-4" /> Buat Voucher
+            </button>
+          </div>
+          {message && (
+            <p className="mt-5 border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              {message}
+            </p>
+          )}
+          {showForm && (
+            <form
+              onSubmit={(event) => void add(event)}
+              className="mt-6 border border-[#eadfd4] bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 items-center justify-center rounded-full bg-[#f5eadb] text-[#b88a55]">
+                  <TicketPercent className="size-5" />
+                </span>
+                <div>
+                  <h2 className="font-luxury text-2xl">Voucher Baru</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Tentukan periode promo, nominal, dan kuota penggunaan.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <input
+                  required
+                  name="code"
+                  placeholder="FLOO10"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                />
+                <input
+                  required
+                  name="name"
+                  placeholder="Nama promo"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                />
+                <select
+                  name="type"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                >
+                  <option value="PERCENTAGE">Persentase (%)</option>
+                  <option value="FIXED">Potongan harga</option>
+                </select>
+                <input
+                  required
+                  name="value"
+                  type="number"
+                  min="1"
+                  placeholder="Nilai promo"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                />
+                <input
+                  required
+                  name="min_purchase"
+                  type="number"
+                  min="0"
+                  placeholder="Min. pembelian"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                />
+                <input
+                  required
+                  name="max_discount"
+                  type="number"
+                  min="0"
+                  placeholder="Maks. diskon"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                />
+                <input
+                  required
+                  name="quota"
+                  type="number"
+                  min="0"
+                  placeholder="Kuota (0 = tanpa batas)"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                />
+                <input
+                  required
+                  name="start_date"
+                  type="date"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                />
+                <input
+                  required
+                  name="end_date"
+                  type="date"
+                  className="border border-[#eadfd4] px-4 py-3 text-sm"
+                />
+              </div>
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 text-sm text-[#806b59]"
+                >
+                  Batal
+                </button>
+                <button
+                  disabled={saving}
+                  className="bg-[#2d241f] px-5 py-2.5 text-sm text-white disabled:opacity-60"
+                >
+                  {saving ? "Menyimpan..." : "Simpan Voucher"}
+                </button>
+              </div>
+            </form>
+          )}
+          <section className="mt-6 overflow-hidden border border-[#eadfd4] bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[850px] text-left text-sm">
+                <thead className="bg-[#fcfaf7] text-[11px] uppercase tracking-[.12em] text-[#806b59]">
+                  <tr>
+                    <th className="p-4">Voucher</th>
+                    <th className="p-4">Diskon</th>
+                    <th className="p-4">Syarat</th>
+                    <th className="p-4">Penggunaan</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id} className="border-t border-[#eee5dc]">
+                      <td className="p-4">
+                        <p className="font-semibold tracking-[.08em] text-[#a07750]">
+                          {item.code}
+                        </p>
+                        <p className="mt-1 text-xs text-[#806b59]">
+                          {item.name}
+                        </p>
+                      </td>
+                      <td className="p-4">
+                        {item.type === "PERCENTAGE"
+                          ? item.value + "%"
+                          : money(item.value)}
+                      </td>
+                      <td className="p-4 text-xs text-[#806b59]">
+                        Min. {money(item.min_purchase)}
+                        <br />
+                        Maks. {money(item.max_discount)}
+                      </td>
+                      <td className="p-4 text-xs">
+                        {item.used || 0} / {item.quota || "∞"}
+                      </td>
+                      <td className="p-4">
+                        <span className="bg-[#edf4e8] px-2.5 py-1 text-xs text-[#6d9855]">
+                          {item.status || "ACTIVE"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => void remove(item.id)}
+                          className="inline-flex items-center gap-1 text-xs text-rose-600"
+                        >
+                          <Trash2 className="size-4" /> Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!items.length && (
+              <div className="p-12 text-center text-sm text-[#806b59]">
+                Belum ada voucher aktif.
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
+  );
 }

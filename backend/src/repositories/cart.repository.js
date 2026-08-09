@@ -3,6 +3,7 @@ const {
   CartItem,
   ProductVariant,
   Product,
+  ProductImage,
   Color,
   Size,
 } = require("../../models");
@@ -23,6 +24,18 @@ class CartRepository {
                 {
                   model: Product,
                   as: "product",
+                  include: [
+                    {
+                      model: ProductImage,
+                      as: "images",
+                      attributes: ["id", "image", "alt", "is_primary", "sort_order"],
+                      separate: true,
+                      order: [
+                        ["is_primary", "DESC"],
+                        ["sort_order", "ASC"],
+                      ],
+                    },
+                  ],
                 },
                 {
                   model: Color,

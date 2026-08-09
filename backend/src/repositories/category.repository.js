@@ -26,7 +26,9 @@ class CategoryRepository {
       where,
       limit,
       offset,
-      order: [[sort, order]],
+      include: [{ model: Category, as: "subcategories", required: false }],
+      distinct: true,
+      order: [["parent_id", "ASC"], [sort, order]],
     });
   }
 
@@ -56,6 +58,14 @@ class CategoryRepository {
     return Category.destroy({
       where: { id },
     });
+  }
+
+  async findByNameAndParent(name, parentId) {
+    return Category.findOne({ where: { name, parent_id: parentId || null } });
+  }
+
+  async hasChildren(id) {
+    return Category.count({ where: { parent_id: id } });
   }
 }
 

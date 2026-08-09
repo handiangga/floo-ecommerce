@@ -9,12 +9,16 @@ module.exports = (err, req, res, next) => {
   });
 
   if (err.name === "MulterError") {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "Ukuran gambar terlalu besar. Maksimal 10 MB."
+        : "Upload gambar tidak valid. Gunakan JPG, PNG, atau WEBP.";
     return ResponseHelper.validation(res, [
       {
         field: err.field || "image",
-        message: "Upload image is invalid or exceeds the allowed limit",
+        message,
       },
-    ]);
+    ], message);
   }
 
   if (err.name === "SequelizeValidationError") {

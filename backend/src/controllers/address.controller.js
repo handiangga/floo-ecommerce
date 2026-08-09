@@ -39,6 +39,18 @@ class AddressController {
 
   async store(req, res, next) {
     try {
+      if (req.body.label === "HOME") {
+        const existingHome = await AddressService.getHomeAddress(
+          req.customer.id,
+        );
+        if (existingHome) {
+          return ResponseHelper.conflict(
+            res,
+            "Alamat Rumah sudah ada. Gunakan alamat yang tersimpan atau hapus alamat Rumah lama terlebih dahulu.",
+          );
+        }
+      }
+
       req.body.customer_id = req.customer.id;
 
       const result = await AddressService.create(req.body);

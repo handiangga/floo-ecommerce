@@ -13,7 +13,7 @@ class AddressService {
       search: query.search || "",
       limit,
       offset,
-      sort: query.sort || "createdAt",
+      sort: query.sort || "is_default",
       order: query.order || "DESC",
     });
 
@@ -35,6 +35,10 @@ class AddressService {
 
   async getByCustomer(customer_id) {
     return AddressRepository.findByCustomer(customer_id);
+  }
+
+  async getHomeAddress(customer_id) {
+    return AddressRepository.findByCustomerAndLabel(customer_id, "HOME");
   }
 
   async create(payload) {

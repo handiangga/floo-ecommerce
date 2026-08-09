@@ -68,6 +68,16 @@ class AddressRepository {
     });
   }
 
+  async findByCustomerAndLabel(customer_id, label) {
+    return Address.findOne({
+      where: { customer_id, label },
+      order: [
+        ["is_default", "DESC"],
+        ["createdAt", "DESC"],
+      ],
+    });
+  }
+
   async findDefault(customer_id) {
     return Address.findOne({
       where: {

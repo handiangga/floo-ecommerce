@@ -51,8 +51,13 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
         validate: {
-          isUrl: {
-            msg: "Link must be a valid URL",
+          isInternalPathOrUrl(value) {
+            if (!value || value.startsWith("/")) return;
+            try {
+              new URL(value);
+            } catch {
+              throw new Error("Link must be a valid URL or internal path");
+            }
           },
         },
       },

@@ -20,6 +20,22 @@ class SupabaseService {
     return data.publicUrl;
   }
 
+  getPathFromPublicUrl(publicUrl, bucket = DEFAULT_BUCKET) {
+    if (!publicUrl || !bucket) return null;
+
+    try {
+      const pathname = new URL(publicUrl).pathname;
+      const marker = `/storage/v1/object/public/${bucket}/`;
+      const index = pathname.indexOf(marker);
+
+      return index === -1
+        ? null
+        : decodeURIComponent(pathname.slice(index + marker.length));
+    } catch {
+      return null;
+    }
+  }
+
   async upload(file, folder = "") {
     if (!file) {
       throw new Error("File is required");
@@ -65,6 +81,14 @@ class SupabaseService {
       throw error;
     }
 
+    return true;
+  }
+
+  async removeByPublicUrl(publicUrl, bucket = DEFAULT_BUCKET) {
+    const filePath = this.getPathFromPublicUrl(publicUrl, bucket);
+    if (!filePath) return false;
+
+    await this.remove(filePath, bucket);
     return true;
   }
 

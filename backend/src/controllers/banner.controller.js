@@ -32,7 +32,7 @@ class BannerController {
 
   async store(req, res, next) {
     try {
-      const result = await BannerService.create(req.body);
+      const result = await BannerService.create(req.body, req.file);
 
       return ResponseHelper.created(res, result, "Banner created successfully");
     } catch (err) {
@@ -42,7 +42,7 @@ class BannerController {
 
   async update(req, res, next) {
     try {
-      const result = await BannerService.update(req.params.id, req.body);
+      const result = await BannerService.update(req.params.id, req.body, req.file);
 
       return ResponseHelper.success(res, result, "Banner updated successfully");
     } catch (err) {

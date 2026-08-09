@@ -33,13 +33,17 @@ class CategoryService {
   }
 
   async create(payload) {
-    payload.slug = SlugHelper.generate(payload.name);
-
-    const exist = await CategoryRepository.findBySlug(payload.slug);
-
-    if (exist) {
-      throw new Error("Category already exists");
+    let parent = null;
+    if (payload.parent_id) {
+      parent = await CategoryRepository.findById(payload.parent_id);
+      if (!parent) throw new Error("Kategori utama tidak ditemukan");
+      if (parent.parent_id) throw new Error("Subkategori hanya boleh berada satu tingkat di bawah kategori utama");
     }
+
+    const exist = await CategoryRepository.findByNameAndParent(payload.name, payload.parent_id);
+    if (exist) throw new Error("Subkategori dengan nama tersebut sudah ada pada kategori ini");
+
+    payload.slug = SlugHelper.generate(parent ? `${parent.slug}-${payload.name}` : payload.name);
 
     return CategoryRepository.create(payload);
   }
@@ -51,15 +55,24 @@ class CategoryService {
       throw new Error("Category not found");
     }
 
-    if (payload.name) {
-      payload.slug = SlugHelper.generate(payload.name);
+    const nextParentId = Object.prototype.hasOwnProperty.call(payload, "parent_id") ? payload.parent_id : category.parent_id;
+    let parent = null;
 
-      const exist = await CategoryRepository.findBySlug(payload.slug);
-
-      if (exist && Number(exist.id) !== Number(id)) {
-        throw new Error("Category already exists");
-      }
+    if (nextParentId && Number(nextParentId) === Number(id)) {
+      throw new Error("Kategori tidak dapat menjadi subkategori dirinya sendiri");
     }
+
+    if (nextParentId) {
+      parent = await CategoryRepository.findById(nextParentId);
+      if (!parent) throw new Error("Kategori utama tidak ditemukan");
+      if (parent.parent_id) throw new Error("Subkategori hanya boleh berada satu tingkat di bawah kategori utama");
+    }
+
+    const nextName = payload.name || category.name;
+    const exist = await CategoryRepository.findByNameAndParent(nextName, nextParentId);
+    if (exist && Number(exist.id) !== Number(id)) throw new Error("Subkategori dengan nama tersebut sudah ada pada kategori ini");
+
+    payload.slug = SlugHelper.generate(parent ? `${parent.slug}-${nextName}` : nextName);
 
     return CategoryRepository.update(id, payload);
   }
@@ -70,6 +83,9 @@ class CategoryService {
     if (!category) {
       throw new Error("Category not found");
     }
+
+    const children = await CategoryRepository.hasChildren(id);
+    if (children) throw new Error("Hapus atau pindahkan subkategori terlebih dahulu");
 
     await CategoryRepository.delete(id);
 

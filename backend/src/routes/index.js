@@ -57,7 +57,10 @@ router.use("/categories", require("./category.route"));
 router.use("/colors", require("./color.route"));
 router.use("/sizes", require("./size.route"));
 router.use("/banners", require("./banner.route"));
+router.use("/homepage-occasions", require("./homepage-occasion.route"));
+router.use("/homepage-craftsmanship", require("./homepage-craftsmanship.route"));
 router.use("/vouchers", require("./voucher.route"));
+router.use("/store-settings", require("./store-setting.route"));
 
 // ======================
 // PRODUCT
@@ -72,6 +75,7 @@ router.use("/product-variants", require("./product-variant.route"));
 
 router.use("/customers", require("./customer.route"));
 router.use("/addresses", require("./address.route"));
+router.use("/regions", require("./region.route"));
 
 // ======================
 // SHOPPING
