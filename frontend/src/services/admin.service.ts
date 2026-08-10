@@ -118,6 +118,7 @@ export const AdminService = {
     api.put(`/categories/${id}`, payload).then((response) => response.data),
   removeCategory: (id: number) =>
     api.delete(`/categories/${id}`).then((response) => response.data),
+  collections: () => api.get("/collections").then((response) => response.data),
   banners: () => api.get("/banners").then((response) => response.data),
   createBanner: (payload: FormData | Record<string, string>) =>
     api.post("/banners", payload).then((response) => response.data),

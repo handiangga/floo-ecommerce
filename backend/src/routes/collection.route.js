@@ -1,0 +1,2 @@
+const router = require("express").Router(); const Controller = require("../controllers/collection.controller"); const authentication = require("../middlewares/authentication"); const authorization = require("../middlewares/authorization");
+router.get("/", Controller.index); router.post("/", authentication, authorization("OWNER", "ADMIN"), Controller.store); router.put("/:id", authentication, authorization("OWNER", "ADMIN"), Controller.update); router.delete("/:id", authentication, authorization("OWNER", "ADMIN"), Controller.destroy); module.exports = router;

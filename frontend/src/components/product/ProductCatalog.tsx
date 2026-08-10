@@ -11,12 +11,13 @@ interface ProductCatalogProps {
   eyebrow?: string;
   params?: ProductQuery;
   categorySlug?: string;
+  collectionSlug?: string;
   saleOnly?: boolean;
   description?: string;
 }
 
-export default function ProductCatalog({ title, eyebrow = "Floo Fashion", params, categorySlug, saleOnly = false, description }: ProductCatalogProps) {
-  const { data, isLoading, isError } = useProducts({ limit: categorySlug || saleOnly ? 100 : 24, ...params });
+export default function ProductCatalog({ title, eyebrow = "Floo Fashion", params, categorySlug, collectionSlug, saleOnly = false, description }: ProductCatalogProps) {
+  const { data, isLoading, isError } = useProducts({ limit: categorySlug || collectionSlug || saleOnly ? 100 : 24, collection_slug: collectionSlug, ...params });
   const allProducts: Product[] = data?.data ?? [];
   const normalizedSlug = categorySlug?.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const products = allProducts.filter((product) => {

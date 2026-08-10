@@ -29,6 +29,7 @@ export interface Product {
   id: number;
 
   category_id: number;
+  subcategory_id?: number | null;
 
   name: string;
   slug: string;
@@ -52,6 +53,8 @@ export interface Product {
     name: string;
     slug: string;
   };
+  subcategory?: { id: number; name: string; slug: string };
+  collections?: Array<{ id: number; name: string; slug: string }>;
 
   createdAt: string;
   updatedAt: string;
@@ -63,5 +66,7 @@ export interface ProductQuery {
   is_best_seller?: boolean;
   is_new_arrival?: boolean;
   category_id?: number;
+  subcategory_id?: number;
+  collection_slug?: string;
   search?: string;
 }

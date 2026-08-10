@@ -5,6 +5,8 @@ const Status = require("../constants/productStatus");
 module.exports = {
   create: Joi.object({
     category_id: Joi.number().integer().required(),
+    subcategory_id: Joi.number().integer().allow(null, ""),
+    collection_ids: Joi.alternatives().try(Joi.array().items(Joi.number().integer()), Joi.string().allow("")),
 
     name: Joi.string().min(2).max(150).required(),
 
@@ -37,6 +39,8 @@ module.exports = {
 
   update: Joi.object({
     category_id: Joi.number().integer(),
+    subcategory_id: Joi.number().integer().allow(null, ""),
+    collection_ids: Joi.alternatives().try(Joi.array().items(Joi.number().integer()), Joi.string().allow("")),
 
     name: Joi.string().min(2).max(150),
 

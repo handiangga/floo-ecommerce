@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ImagePlus } from "lucide-react";
@@ -13,6 +13,8 @@ import { AdminSession } from "@/lib/session";
 export default function NewProductPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [collections, setCollections] = useState<Array<{ id: number; name: string }>>([]);
+  const [categoryId, setCategoryId] = useState("");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -22,6 +24,7 @@ export default function NewProductPage() {
       return;
     }
     AdminService.categories().then((result) => setCategories(result.data?.data ?? result.data ?? []));
+    AdminService.collections().then((result) => setCollections(result.data?.data ?? result.data ?? []));
   }, [router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -35,6 +38,7 @@ export default function NewProductPage() {
     }
 
     productForm.delete("images");
+    productForm.set("collection_ids", JSON.stringify(productForm.getAll("collection_ids").map(Number)));
     ["is_featured", "is_best_seller", "is_new_arrival", "is_ready_stock", "is_preorder"].forEach((field) => {
       productForm.set(field, productForm.get(field) ? "true" : "false");
     });
@@ -61,6 +65,9 @@ export default function NewProductPage() {
     }
   };
 
+  const parents = useMemo(() => categories.filter((category) => !category.parent_id), [categories]);
+  const subcategories = useMemo(() => categories.filter((category) => String(category.parent_id ?? "") === categoryId), [categories, categoryId]);
+
   return (
     <div className="flex min-h-screen bg-muted">
       <AdminSidebar />
@@ -73,8 +80,10 @@ export default function NewProductPage() {
           <form onSubmit={(event) => void submit(event)} className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
             <div className="grid gap-5 md:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium md:col-span-2">Nama produk<input required name="name" placeholder="Contoh: Kebaya Amara" className="rounded-xl border p-3 font-normal" /></label>
-              <label className="grid gap-1.5 text-sm font-medium">Kategori<select required name="category_id" defaultValue="" className="rounded-xl border bg-white p-3 font-normal"><option value="" disabled>Pilih kategori</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+              <label className="grid gap-1.5 text-sm font-medium">Kategori utama<select required name="category_id" value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className="rounded-xl border bg-white p-3 font-normal"><option value="" disabled>Pilih kategori utama</option>{parents.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+              <label className="grid gap-1.5 text-sm font-medium">Subkategori <span className="font-normal text-muted-foreground">Opsional</span><select name="subcategory_id" defaultValue="" disabled={!categoryId} className="rounded-xl border bg-white p-3 font-normal"><option value="">Tanpa subkategori</option>{subcategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
               <label className="grid gap-1.5 text-sm font-medium">Status<select name="status" defaultValue="ACTIVE" className="rounded-xl border bg-white p-3 font-normal"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></label>
+              <fieldset className="rounded-xl border bg-[#fcfaf7] p-4 text-sm md:col-span-2"><legend className="px-1 font-medium">Collections <span className="font-normal text-muted-foreground">Produk boleh masuk lebih dari satu collection</span></legend><div className="mt-2 flex flex-wrap gap-3">{collections.map((collection) => <label key={collection.id} className="flex items-center gap-2 rounded-full border bg-white px-3 py-2"><input name="collection_ids" type="checkbox" value={collection.id} /> {collection.name}</label>)}</div></fieldset>
               <label className="grid gap-1.5 text-sm font-medium md:col-span-2">Deskripsi<textarea name="description" placeholder="Ceritakan detail produk…" className="min-h-32 rounded-xl border p-3 font-normal" /></label>
               <label className="grid gap-1.5 text-sm font-medium">Material<input name="material" placeholder="Contoh: Brokat premium" className="rounded-xl border p-3 font-normal" /></label>
               <label className="grid gap-1.5 text-sm font-medium">Berat (gram)<input name="weight" type="number" min="0" defaultValue="0" className="rounded-xl border p-3 font-normal" /></label>

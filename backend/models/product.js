@@ -11,6 +11,8 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: "CASCADE",
         onDelete: "RESTRICT",
       });
+      Product.belongsTo(models.Category, { foreignKey: "subcategory_id", as: "subcategory", onUpdate: "CASCADE", onDelete: "SET NULL" });
+      Product.belongsToMany(models.Collection, { through: "ProductCollections", foreignKey: "product_id", otherKey: "collection_id", as: "collections" });
 
       Product.hasMany(models.ProductImage, {
         foreignKey: "product_id",
@@ -60,6 +62,7 @@ module.exports = (sequelize, DataTypes) => {
           },
         },
       },
+      subcategory_id: { type: DataTypes.BIGINT, allowNull: true },
 
       name: {
         type: DataTypes.STRING(150),

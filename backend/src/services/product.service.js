@@ -15,6 +15,8 @@ class ProductService {
       offset,
       search: query.search || "",
       category_id: query.category_id,
+      subcategory_id: query.subcategory_id,
+      collection_slug: query.collection_slug,
       status: query.status,
 
       is_featured:
@@ -63,11 +65,9 @@ class ProductService {
   }
 
   async create(payload, file) {
-    const category = await CategoryRepository.findById(payload.category_id);
-
-    if (!category) {
-      throw new Error("Category not found");
-    }
+    await this.validateClassification(payload);
+    const collectionIds = this.parseCollectionIds(payload.collection_ids);
+    delete payload.collection_ids;
 
     payload.slug = SlugHelper.generate(payload.name);
 
@@ -86,7 +86,9 @@ class ProductService {
       payload.image_path = upload.path;
     }
 
-    return ProductRepository.create(payload);
+    const product = await ProductRepository.create(payload);
+    if (collectionIds.length) await product.setCollections(collectionIds);
+    return ProductRepository.findById(product.id);
   }
 
   async update(id, payload, file) {
@@ -96,13 +98,10 @@ class ProductService {
       throw new Error("Product not found");
     }
 
-    if (payload.category_id) {
-      const category = await CategoryRepository.findById(payload.category_id);
-
-      if (!category) {
-        throw new Error("Category not found");
-      }
-    }
+    await this.validateClassification({ ...product.toJSON(), ...payload });
+    const hasCollections = Object.prototype.hasOwnProperty.call(payload, "collection_ids");
+    const collectionIds = this.parseCollectionIds(payload.collection_ids);
+    delete payload.collection_ids;
 
     if (payload.name) {
       payload.slug = SlugHelper.generate(payload.name);
@@ -127,7 +126,9 @@ class ProductService {
       payload.image_path = upload.path;
     }
 
-    return ProductRepository.update(id, payload);
+    const updated = await ProductRepository.update(id, payload);
+    if (hasCollections) await updated.setCollections(collectionIds);
+    return ProductRepository.findById(id);
   }
 
   async delete(id) {
@@ -144,6 +145,21 @@ class ProductService {
     await ProductRepository.delete(id);
 
     return true;
+  }
+
+  parseCollectionIds(value) {
+    if (!value) return [];
+    const parsed = Array.isArray(value) ? value : JSON.parse(value);
+    return [...new Set(parsed.map(Number).filter(Number.isInteger))];
+  }
+
+  async validateClassification(payload) {
+    const category = await CategoryRepository.findById(payload.category_id);
+    if (!category || category.parent_id) throw new Error("Kategori utama tidak valid");
+    if (payload.subcategory_id) {
+      const subcategory = await CategoryRepository.findById(payload.subcategory_id);
+      if (!subcategory || Number(subcategory.parent_id) !== Number(category.id)) throw new Error("Subkategori harus berasal dari kategori utama yang dipilih");
+    }
   }
 }
 

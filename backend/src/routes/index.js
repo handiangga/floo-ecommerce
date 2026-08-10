@@ -54,6 +54,7 @@ router.use("/customer-auth", require("./customer-auth.route"));
 // MASTER
 // ======================
 router.use("/categories", require("./category.route"));
+router.use("/collections", require("./collection.route"));
 router.use("/colors", require("./color.route"));
 router.use("/sizes", require("./size.route"));
 router.use("/banners", require("./banner.route"));
