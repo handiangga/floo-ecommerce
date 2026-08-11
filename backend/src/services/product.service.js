@@ -1,4 +1,5 @@
 const ProductRepository = require("../repositories/product.repository");
+const ProductVariantRepository = require("../repositories/product-variant.repository");
 const CategoryRepository = require("../repositories/category.repository");
 const SupabaseService = require("./supabase.service");
 const ImageHelper = require("../helpers/image.helper");
@@ -9,6 +10,10 @@ const SlugHelper = require("../helpers/slug.helper");
 class ProductService {
   async getAll(query) {
     const { page, limit, offset } = PaginationHelper.getPagination(query);
+    const wantsBestSeller = query.is_best_seller === "true";
+    const bestSellerProductIds = wantsBestSeller
+      ? await ProductRepository.findBestSellerProductIds()
+      : undefined;
 
     const result = await ProductRepository.findAll({
       limit,
@@ -25,9 +30,9 @@ class ProductService {
           : undefined,
 
       is_best_seller:
-        query.is_best_seller !== undefined
-          ? query.is_best_seller === "true"
-          : undefined,
+        undefined,
+
+      product_ids: bestSellerProductIds,
 
       is_new_arrival:
         query.is_new_arrival !== undefined
@@ -65,6 +70,7 @@ class ProductService {
   }
 
   async create(payload, file) {
+    this.normalizeFulfillment(payload, true);
     await this.validateClassification(payload);
     const collectionIds = this.parseCollectionIds(payload.collection_ids);
     delete payload.collection_ids;
@@ -98,6 +104,8 @@ class ProductService {
       throw new Error("Product not found");
     }
 
+    const availabilityWasUpdated = ["is_ready_stock", "is_preorder", "preorder_days"].some((field) => Object.prototype.hasOwnProperty.call(payload, field));
+    this.normalizeFulfillment(payload, false);
     await this.validateClassification({ ...product.toJSON(), ...payload });
     const hasCollections = Object.prototype.hasOwnProperty.call(payload, "collection_ids");
     const collectionIds = this.parseCollectionIds(payload.collection_ids);
@@ -127,6 +135,13 @@ class ProductService {
     }
 
     const updated = await ProductRepository.update(id, payload);
+    if (availabilityWasUpdated) {
+      await ProductVariantRepository.updateByProduct(id, {
+        is_ready_stock: updated.is_ready_stock,
+        is_preorder: updated.is_preorder,
+        preorder_days: updated.preorder_days,
+      });
+    }
     if (hasCollections) await updated.setCollections(collectionIds);
     return ProductRepository.findById(id);
   }
@@ -151,6 +166,33 @@ class ProductService {
     if (!value) return [];
     const parsed = Array.isArray(value) ? value : JSON.parse(value);
     return [...new Set(parsed.map(Number).filter(Number.isInteger))];
+  }
+
+  normalizeFulfillment(payload, isCreate) {
+    const availabilityFields = ["is_ready_stock", "is_preorder", "preorder_days"];
+    const shouldNormalize = isCreate || availabilityFields.some((field) => Object.prototype.hasOwnProperty.call(payload, field));
+
+    // Best Seller and New Arrival are system-driven, never set by an admin form.
+    delete payload.is_featured;
+    delete payload.is_best_seller;
+    delete payload.is_new_arrival;
+
+    if (!shouldNormalize) return;
+
+    const isPreorder = payload.is_preorder === true || payload.is_preorder === "true";
+    payload.is_preorder = isPreorder;
+    payload.is_ready_stock = !isPreorder;
+
+    if (!isPreorder) {
+      payload.preorder_days = 0;
+      return;
+    }
+
+    const preorderDays = Number(payload.preorder_days);
+    if (!Number.isInteger(preorderDays) || preorderDays < 1) {
+      throw new Error("Lama pre-order minimal 1 hari");
+    }
+    payload.preorder_days = preorderDays;
   }
 
   async validateClassification(payload) {

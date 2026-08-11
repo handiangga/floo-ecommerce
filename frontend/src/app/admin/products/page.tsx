@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Edit3, Plus, Search, Trash2 } from "lucide-react";
+import { Boxes, Edit3, PackageCheck, Plus, Search, Trash2 } from "lucide-react";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AdminService } from "@/services/admin.service";
@@ -13,6 +13,12 @@ import { AdminSession } from "@/lib/session";
 import { confirmDelete, showError, showSuccess } from "@/lib/alert";
 
 const fallbackImage = "/images/products/default-product.png";
+const formatRupiah = (value: number) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(value);
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -168,12 +174,15 @@ export default function AdminProductsPage() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px] text-left text-sm">
+                <table className="w-full min-w-[1100px] text-left text-sm">
                   <thead className="border-b bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="p-4 font-medium">Produk</th>
                       <th className="p-4 font-medium">Kategori</th>
                       <th className="p-4 font-medium">Koleksi</th>
+                      <th className="p-4 font-medium">Harga mulai</th>
+                      <th className="p-4 font-medium">Stok</th>
+                      <th className="p-4 font-medium">Varian</th>
                       <th className="p-4 font-medium">Status</th>
                       <th className="p-4 font-medium">Diperbarui</th>
                       <th className="p-4 text-right font-medium">Aksi</th>
@@ -186,11 +195,24 @@ export default function AdminProductsPage() {
                         product.images?.[0]?.image_url ??
                         product.image_url ??
                         fallbackImage;
-                      const labels = [
-                        product.is_featured && "Featured",
-                        product.is_best_seller && "Best seller",
-                        product.is_new_arrival && "New arrival",
-                      ].filter(Boolean);
+                      const labels = (product.collections ?? []).map((collection) => collection.name);
+                      const variants = product.variants ?? [];
+                      const prices = variants
+                        .map((variant) => Number(variant.discount_price ?? variant.price))
+                        .filter((price) => Number.isFinite(price) && price > 0);
+                      const lowestPrice = prices.length ? Math.min(...prices) : null;
+                      const totalStock = variants.reduce(
+                        (total, variant) => total + Math.max(0, Number(variant.stock) || 0),
+                        0,
+                      );
+                      const variantSummary = variants
+                        .slice(0, 2)
+                        .map((variant) =>
+                          [variant.color?.name, variant.size?.name]
+                            .filter(Boolean)
+                            .join(" / "),
+                        )
+                        .filter(Boolean);
                       return (
                         <tr key={product.id} className="border-b last:border-0">
                           <td className="p-4">
@@ -213,7 +235,12 @@ export default function AdminProductsPage() {
                             </div>
                           </td>
                           <td className="p-4 text-muted-foreground">
-                            {product.category?.name ?? "—"}
+                            <p>{product.category?.name ?? "—"}</p>
+                            {product.subcategory?.name && (
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                {product.subcategory.name}
+                              </p>
+                            )}
                           </td>
                           <td className="p-4">
                             <div className="flex flex-wrap gap-1">
@@ -230,6 +257,25 @@ export default function AdminProductsPage() {
                                 <span className="text-muted-foreground">—</span>
                               )}
                             </div>
+                          </td>
+                          <td className="p-4">
+                            {lowestPrice === null ? (
+                              <span className="text-muted-foreground">Belum diatur</span>
+                            ) : (
+                              <div>
+                                <p className="font-medium text-foreground">{formatRupiah(lowestPrice)}</p>
+                                {prices.length > 1 && <p className="mt-0.5 text-xs text-muted-foreground">dari {variants.length} varian</p>}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <div className="inline-flex items-center gap-2">
+                              <span className={`flex size-8 items-center justify-center rounded-lg ${totalStock > 5 ? "bg-emerald-50 text-emerald-700" : totalStock > 0 ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-700"}`}><PackageCheck className="size-4" /></span>
+                              <div><p className={`font-medium ${totalStock === 0 ? "text-rose-700" : "text-foreground"}`}>{totalStock} pcs</p><p className="text-[11px] text-muted-foreground">{totalStock === 0 ? "Stok habis" : totalStock <= 5 ? "Stok menipis" : "Siap dijual"}</p></div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-start gap-2"><Boxes className="mt-0.5 size-4 shrink-0 text-primary" /><div><p className="font-medium">{variants.length} varian</p>{variantSummary.length ? <p className="mt-0.5 max-w-[150px] truncate text-[11px] text-muted-foreground">{variantSummary.join(", ")}{variants.length > 2 ? " + lainnya" : ""}</p> : <p className="mt-0.5 text-[11px] text-muted-foreground">Belum ada varian</p>}</div></div>
                           </td>
                           <td className="p-4">
                             <span

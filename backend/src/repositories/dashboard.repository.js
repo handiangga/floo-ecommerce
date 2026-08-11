@@ -201,7 +201,9 @@ class DashboardRepository {
         {
           model: Payment,
           as: "payment",
-          attributes: ["payment_method", "status", "paid_at"],
+          // Payment records store the selected payment channel in `method`.
+          // `payment_method` belongs to the order record, not the Payments table.
+          attributes: ["method", "status", "paid_at"],
         },
       ],
       limit,

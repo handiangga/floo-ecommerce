@@ -6,7 +6,6 @@ import Review from "@/components/home/Review";
 import Instagram from "@/components/home/Instagram";
 import TrustBar from "@/components/home/TrustBar";
 import Occasions from "@/components/home/Occasions";
-import ProductPromise from "@/components/home/ProductPromise";
 
 export default function Home() {
   return (
@@ -16,7 +15,6 @@ export default function Home() {
 
       <Occasions />
       <BestSeller />
-      <ProductPromise />
       <Story />
       <Review />
       <Instagram />

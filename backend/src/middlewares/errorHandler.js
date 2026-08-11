@@ -32,7 +32,20 @@ module.exports = (err, req, res, next) => {
   }
 
   if (err.name === "SequelizeUniqueConstraintError") {
-    return ResponseHelper.conflict(res, err.errors[0].message);
+    const isProduct = req.originalUrl.startsWith("/api/v1/products");
+    return ResponseHelper.conflict(
+      res,
+      isProduct
+        ? "Produk dengan nama atau slug tersebut sudah ada. Gunakan nama produk yang berbeda."
+        : err.errors[0]?.message || "Data yang sama sudah ada.",
+    );
+  }
+
+  if (err.message === "Product already exists") {
+    return ResponseHelper.conflict(
+      res,
+      "Produk dengan nama atau slug tersebut sudah ada. Gunakan nama produk yang berbeda.",
+    );
   }
 
   const message =

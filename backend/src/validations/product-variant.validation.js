@@ -4,9 +4,19 @@ module.exports = {
   create: Joi.object({
     product_id: Joi.number().integer().required(),
 
-    color_id: Joi.number().integer().required(),
+    color_id: Joi.number().integer(),
 
-    size_id: Joi.number().integer().required(),
+    size_id: Joi.number().integer(),
+
+    option_values: Joi.array()
+      .items(
+        Joi.object({
+          name: Joi.string().trim().min(1).max(50).required(),
+          value: Joi.string().trim().min(1).max(80).required(),
+        }),
+      )
+      .max(3)
+      .default([]),
 
     barcode: Joi.string().allow("", null),
 
@@ -37,9 +47,22 @@ module.exports = {
     preorder_days: Joi.number().integer().min(0).default(0),
 
     status: Joi.string().valid("ACTIVE", "INACTIVE").default("ACTIVE"),
+  }).custom((value, helpers) => {
+    if (!value.option_values?.length && (!value.color_id || !value.size_id)) {
+      return helpers.error("any.invalid", { message: "Manual option values or color and size are required" });
+    }
+    return value;
   }),
 
   update: Joi.object({
+    option_values: Joi.array()
+      .items(
+        Joi.object({
+          name: Joi.string().trim().min(1).max(50).required(),
+          value: Joi.string().trim().min(1).max(80).required(),
+        }),
+      )
+      .max(3),
     barcode: Joi.string().allow("", null),
 
     price: Joi.number().integer().min(0),

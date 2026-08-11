@@ -18,9 +18,9 @@ type Product = {
   weight?: number;
   category_id: number;
   status: string;
-  is_featured?: boolean;
-  is_best_seller?: boolean;
-  is_new_arrival?: boolean;
+  is_ready_stock?: boolean;
+  is_preorder?: boolean;
+  preorder_days?: number;
 };
 type Variant = {
   id: number;
@@ -51,6 +51,7 @@ export default function EditProductPage() {
   const [message, setMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  const [fulfillment, setFulfillment] = useState<"READY_STOCK" | "PREORDER">("READY_STOCK");
 
   const loadVariants = async () => {
     const result = await AdminService.variants(id);
@@ -64,7 +65,10 @@ export default function EditProductPage() {
 
   useEffect(() => {
     void Promise.all([
-      AdminService.product(id).then((result) => setProduct(result.data)),
+      AdminService.product(id).then((result) => {
+        setProduct(result.data);
+        setFulfillment(result.data.is_preorder ? "PREORDER" : "READY_STOCK");
+      }),
       AdminService.categories().then((result) =>
         setCategories(result.data?.data ?? result.data ?? []),
       ),
@@ -86,9 +90,15 @@ export default function EditProductPage() {
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    ["is_featured", "is_best_seller", "is_new_arrival"].forEach((name) =>
-      data.set(name, data.get(name) ? "true" : "false"),
-    );
+    data.delete("fulfillment");
+    const preorderDays = Number(data.get("preorder_days") || 0);
+    if (fulfillment === "PREORDER" && (!Number.isInteger(preorderDays) || preorderDays < 1)) {
+      setMessage("Masukkan lama pre-order minimal 1 hari.");
+      return;
+    }
+    data.set("is_ready_stock", fulfillment === "READY_STOCK" ? "true" : "false");
+    data.set("is_preorder", fulfillment === "PREORDER" ? "true" : "false");
+    data.set("preorder_days", fulfillment === "PREORDER" ? String(preorderDays) : "0");
     try {
       const result = await AdminService.updateProduct(id, data);
       setProduct(result.data);
@@ -375,30 +385,21 @@ export default function EditProductPage() {
                 placeholder="Berat (gram)"
                 className="rounded border p-3"
               />
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  name="is_featured"
-                  type="checkbox"
-                  defaultChecked={product.is_featured}
-                />{" "}
-                Featured
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  name="is_best_seller"
-                  type="checkbox"
-                  defaultChecked={product.is_best_seller}
-                />{" "}
-                Best Seller
-              </label>
-              <label className="flex items-center gap-2 text-sm md:col-span-2">
-                <input
-                  name="is_new_arrival"
-                  type="checkbox"
-                  defaultChecked={product.is_new_arrival}
-                />{" "}
-                New Arrival
-              </label>
+              <fieldset className="rounded-xl border border-[#eadfd4] bg-[#fcfaf7] p-4 text-sm md:col-span-2">
+                <legend className="px-1 font-medium">Ketersediaan produk</legend>
+                <p className="mb-3 text-xs text-muted-foreground">Best Seller dihitung dari penjualan selesai dan New Arrival tampil otomatis berdasarkan tanggal produk dibuat.</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${fulfillment === "READY_STOCK" ? "border-primary bg-white" : "bg-white/60"}`}>
+                    <input checked={fulfillment === "READY_STOCK"} onChange={() => setFulfillment("READY_STOCK")} type="radio" name="fulfillment" value="READY_STOCK" className="mt-1" />
+                    <span><b>Ready stock</b><small className="mt-1 block text-muted-foreground">Siap diproses setelah pembayaran diverifikasi.</small></span>
+                  </label>
+                  <label className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${fulfillment === "PREORDER" ? "border-primary bg-white" : "bg-white/60"}`}>
+                    <input checked={fulfillment === "PREORDER"} onChange={() => setFulfillment("PREORDER")} type="radio" name="fulfillment" value="PREORDER" className="mt-1" />
+                    <span><b>Pre-order</b><small className="mt-1 block text-muted-foreground">Produk dibuat/disiapkan terlebih dahulu sebelum dikirim.</small></span>
+                  </label>
+                </div>
+                {fulfillment === "PREORDER" && <label className="mt-3 grid max-w-sm gap-1 font-medium">Lama pre-order (hari)<input required name="preorder_days" type="number" min="1" defaultValue={Math.max(1, Number(product.preorder_days) || 1)} className="rounded border bg-white p-2 font-normal" /><small className="font-normal text-muted-foreground">Wajib diisi agar estimasi pengerjaan terlihat oleh pelanggan.</small></label>}
+              </fieldset>
             </div>
             <button className="mt-6 rounded-full bg-primary px-5 py-3 text-white">
               Simpan Produk

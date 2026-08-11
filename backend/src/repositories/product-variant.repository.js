@@ -175,6 +175,15 @@ class ProductVariantRepository {
     return this.findById(id, transaction);
   }
 
+  async findDuplicateOptionKey(product_id, option_key, exceptId = null) {
+    const where = { product_id, option_key };
+    if (exceptId) where.id = { [Op.ne]: exceptId };
+    return ProductVariant.findOne({ where });
+  }
+  async updateByProduct(product_id, payload) {
+    return ProductVariant.update(payload, { where: { product_id } });
+  }
+
   async delete(id) {
     return ProductVariant.destroy({
       where: {

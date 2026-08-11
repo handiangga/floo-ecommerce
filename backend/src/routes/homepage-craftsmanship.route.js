@@ -8,6 +8,7 @@ router.get("/", Controller.show);
 router.put("/", authentication, authorization("OWNER", "ADMIN"), upload.fields([
   { name: "image_0", maxCount: 1 }, { name: "image_1", maxCount: 1 },
   { name: "image_2", maxCount: 1 }, { name: "image_3", maxCount: 1 },
+  { name: "image_4", maxCount: 1 },
 ]), Controller.update);
 
 module.exports = router;

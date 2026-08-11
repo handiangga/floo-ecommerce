@@ -81,6 +81,20 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
 
+      // The customer-facing variant labels are stored separately from the
+      // legacy color/size relations so a product can use up to three manual
+      // option groups (for example: Warna, Ukuran, dan Motif).
+      option_values: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: [],
+      },
+
+      option_key: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+      },
+
       sku: {
         type: DataTypes.STRING(100),
         allowNull: false,

@@ -51,12 +51,13 @@ export const AdminService = {
   sizes: () => api.get("/sizes").then((response) => response.data),
   createVariant: (payload: {
     product_id: number;
-    color_id: number;
-    size_id: number;
+    color_id?: number;
+    size_id?: number;
     price: number;
     stock: number;
     weight?: number;
     discount_price?: number;
+    option_values?: Array<{ name: string; value: string }>;
   }) =>
     api.post("/product-variants", payload).then((response) => response.data),
   images: (productId: string) =>

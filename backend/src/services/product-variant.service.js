@@ -8,6 +8,45 @@ const PaginationHelper = require("../helpers/pagination.helper");
 const SKUHelper = require("../helpers/sku.helper");
 
 class ProductVariantService {
+  normalizeOptions(optionValues) {
+    if (!Array.isArray(optionValues)) return [];
+    return optionValues
+      .map((option) => ({
+        name: String(option?.name || "").trim(),
+        value: String(option?.value || "").trim(),
+      }))
+      .filter((option) => option.name && option.value)
+      .slice(0, 3);
+  }
+
+  getOptionKey(options) {
+    return options
+      .map((option) => `${option.name.toLocaleLowerCase("id-ID")}:${option.value.toLocaleLowerCase("id-ID")}`)
+      .join("|");
+  }
+
+  optionHash(value) {
+    let hash = 0;
+    for (let index = 0; index < value.length; index += 1) {
+      hash = (hash << 5) - hash + value.charCodeAt(index);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(36).toUpperCase();
+  }
+
+  async ensureColor(name) {
+    const existing = await ColorRepository.findByName(name);
+    if (existing) return existing;
+    const hex = this.optionHash(name).padStart(6, "0").slice(-6);
+    return ColorRepository.create({ name, code: `#${hex}`, status: "ACTIVE" });
+  }
+
+  async ensureSize(name) {
+    const existing = await SizeRepository.findByName(name);
+    if (existing) return existing;
+    return SizeRepository.create({ name, status: "ACTIVE" });
+  }
+
   async getAll(query) {
     const { page, limit, offset } = PaginationHelper.getPagination(query);
 
@@ -51,23 +90,34 @@ class ProductVariantService {
       throw new Error("Product not found");
     }
 
-    const color = await ColorRepository.findById(payload.color_id);
+    const optionValues = this.normalizeOptions(payload.option_values);
+    let color;
+    let size;
+    let duplicate;
 
-    if (!color) {
-      throw new Error("Color not found");
+    if (optionValues.length) {
+      const optionKey = this.getOptionKey(optionValues);
+      duplicate = await ProductVariantRepository.findDuplicateOptionKey(payload.product_id, optionKey);
+      if (duplicate) throw new Error("Variant already exists");
+
+      color = await this.ensureColor(optionValues[0].value);
+      // The internal Size record keeps every three-option combination unique,
+      // while option_values remains the clean label shown to customers.
+      const sizeLabel = optionValues.length > 2
+        ? `V-${this.optionHash(optionKey).slice(0, 16)}`
+        : (optionValues[1]?.value || "Satuan");
+      size = await this.ensureSize(sizeLabel);
+      payload.color_id = color.id;
+      payload.size_id = size.id;
+      payload.option_values = optionValues;
+      payload.option_key = optionKey;
+    } else {
+      color = await ColorRepository.findById(payload.color_id);
+      size = await SizeRepository.findById(payload.size_id);
+      if (!color) throw new Error("Color not found");
+      if (!size) throw new Error("Size not found");
+      duplicate = await ProductVariantRepository.findDuplicate(payload.product_id, payload.color_id, payload.size_id);
     }
-
-    const size = await SizeRepository.findById(payload.size_id);
-
-    if (!size) {
-      throw new Error("Size not found");
-    }
-
-    const duplicate = await ProductVariantRepository.findDuplicate(
-      payload.product_id,
-      payload.color_id,
-      payload.size_id,
-    );
 
     if (duplicate) {
       throw new Error("Variant already exists");
@@ -81,12 +131,20 @@ class ProductVariantService {
       throw new Error("Minimum order cannot exceed stock");
     }
 
-    payload.sku = SKUHelper.generate(
+    const baseSku = SKUHelper.generate(
       product.category.name,
       product.id,
       color.name,
       size.name,
     );
+    payload.sku = optionValues.length
+      ? `${baseSku}-${this.optionHash(payload.option_key).slice(0, 6)}`
+      : baseSku;
+    // Availability is configured once at product level so every variant has
+    // the same shipping promise shown to the customer.
+    payload.is_ready_stock = product.is_ready_stock;
+    payload.is_preorder = product.is_preorder;
+    payload.preorder_days = product.preorder_days;
 
     return ProductVariantRepository.create(payload);
   }
@@ -98,12 +156,22 @@ class ProductVariantService {
       throw new Error("Product variant not found");
     }
 
-    const duplicate = await ProductVariantRepository.findDuplicateExcept(
-      id,
-      payload.product_id ?? variant.product_id,
-      payload.color_id ?? variant.color_id,
-      payload.size_id ?? variant.size_id,
-    );
+    const optionValues = payload.option_values ? this.normalizeOptions(payload.option_values) : null;
+    if (optionValues?.length) {
+      payload.option_values = optionValues;
+      payload.option_key = this.getOptionKey(optionValues);
+      const duplicate = await ProductVariantRepository.findDuplicateOptionKey(variant.product_id, payload.option_key, id);
+      if (duplicate) throw new Error("Variant already exists");
+    }
+
+    const duplicate = optionValues?.length
+      ? null
+      : await ProductVariantRepository.findDuplicateExcept(
+        id,
+        payload.product_id ?? variant.product_id,
+        payload.color_id ?? variant.color_id,
+        payload.size_id ?? variant.size_id,
+      );
 
     if (duplicate) {
       throw new Error("Variant already exists");
