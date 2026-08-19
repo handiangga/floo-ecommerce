@@ -13,13 +13,25 @@ import { AdminSession } from "@/lib/session";
 import { showError, showSuccessToast } from "@/lib/alert";
 
 type PendingImage = { id: string; file: File; previewUrl: string };
-type VariationGroup = { id: string; name: string; values: string };
+type VariationGroup = { id: string; name: string; values: string[] };
 type VariantInput = { price: string; stock: string };
 type Variant = { key: string; options: Array<{ name: string; value: string }> };
 
 const apiMessage = (error: unknown, fallback: string) => {
   const response = (error as { response?: { data?: { message?: string; errors?: Array<{ message?: string }> } } })?.response;
   return response?.data?.errors?.[0]?.message || response?.data?.message || fallback;
+};
+
+const currencyDigits = (value: string) => value.replace(/\D/g, "");
+
+const parseCurrency = (value: string) => {
+  const digits = currencyDigits(value);
+  return digits ? Number(digits) : Number.NaN;
+};
+
+const formatCurrency = (value: string) => {
+  const digits = currencyDigits(value);
+  return digits ? Number(digits).toLocaleString("id-ID") : "";
 };
 
 export default function NewProductPage() {
@@ -32,8 +44,8 @@ export default function NewProductPage() {
   const [fulfillment, setFulfillment] = useState<"READY_STOCK" | "PREORDER">("READY_STOCK");
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [variationGroups, setVariationGroups] = useState<VariationGroup[]>([
-    { id: "variant-1", name: "Warna", values: "" },
-    { id: "variant-2", name: "Ukuran", values: "" },
+    { id: "variant-1", name: "Warna", values: [""] },
+    { id: "variant-2", name: "Ukuran", values: [""] },
   ]);
   const [variantInputs, setVariantInputs] = useState<Record<string, VariantInput>>({});
   const [bulkGroupId, setBulkGroupId] = useState("variant-1");
@@ -97,7 +109,7 @@ export default function NewProductPage() {
     .map((group) => ({
       ...group,
       name: group.name.trim(),
-      items: [...new Set(group.values.split(/[\n,]/).map((item) => item.trim()).filter(Boolean))],
+      items: [...new Set(group.values.map((item) => item.trim()).filter(Boolean))],
     }))
     .filter((group) => group.name && group.items.length), [variationGroups]);
 
@@ -126,10 +138,30 @@ export default function NewProductPage() {
     setVariationGroups((current) => current.map((group) => group.id === id ? { ...group, ...patch } : group));
   };
 
+  const updateVariationOption = (groupId: string, optionIndex: number, value: string) => {
+    setVariationGroups((current) => current.map((group) => group.id === groupId
+      ? { ...group, values: group.values.map((option, index) => index === optionIndex ? value : option) }
+      : group));
+  };
+
+  const addVariationOption = (groupId: string) => {
+    setVariationGroups((current) => current.map((group) => group.id === groupId
+      ? { ...group, values: [...group.values, ""] }
+      : group));
+  };
+
+  const removeVariationOption = (groupId: string, optionIndex: number) => {
+    setVariationGroups((current) => current.map((group) => {
+      if (group.id !== groupId) return group;
+      const values = group.values.filter((_, index) => index !== optionIndex);
+      return { ...group, values: values.length ? values : [""] };
+    }));
+  };
+
   const addVariationGroup = () => {
     if (variationGroups.length >= 3) return;
     const nextId = `variant-${variationGroups.length + 1}`;
-    setVariationGroups((current) => [...current, { id: nextId, name: "", values: "" }]);
+    setVariationGroups((current) => [...current, { id: nextId, name: "", values: [""] }]);
     setBulkGroupId(nextId);
     setBulkValue("");
   };
@@ -145,11 +177,12 @@ export default function NewProductPage() {
   };
 
   const applyBulkUpdate = () => {
+    const applyToAll = bulkGroupId === "__all__";
     const group = preparedGroups.find((item) => item.id === bulkGroupId);
-    const price = bulkPrice === "" ? undefined : Number(bulkPrice);
+    const price = bulkPrice === "" ? undefined : parseCurrency(bulkPrice);
     const stock = bulkStock === "" ? undefined : Number(bulkStock);
-    if (!group || !bulkValue || (price === undefined && stock === undefined)) {
-      setMessage("Pilih jenis dan nilai variasi, lalu isi minimal harga atau stok untuk update massal.");
+    if ((!applyToAll && (!group || !bulkValue)) || (price === undefined && stock === undefined)) {
+      setMessage("Pilih semua variasi atau pilih jenis dan nilai variasi, lalu isi minimal harga atau stok untuk update massal.");
       return;
     }
     if ((price !== undefined && (!Number.isInteger(price) || price < 0)) || (stock !== undefined && (!Number.isInteger(stock) || stock < 0))) {
@@ -157,11 +190,11 @@ export default function NewProductPage() {
       return;
     }
     setVariantInputs((current) => Object.fromEntries(variants.map((variant) => {
-      const matched = variant.options.some((option) => option.name === group.name && option.value === bulkValue);
+      const matched = applyToAll || variant.options.some((option) => option.name === group?.name && option.value === bulkValue);
       const existing = current[variant.key] ?? { price: "", stock: "" };
       return [variant.key, matched ? {
         ...existing,
-        ...(price !== undefined ? { price: String(price) } : {}),
+        ...(price !== undefined ? { price: formatCurrency(String(price)) } : {}),
         ...(stock !== undefined ? { stock: String(stock) } : {}),
       } : existing];
     })));
@@ -185,7 +218,7 @@ export default function NewProductPage() {
 
     const invalidVariant = variants.find((variant) => {
       const values = variantInputs[variant.key];
-      const price = Number(values?.price);
+      const price = parseCurrency(values?.price ?? "");
       const stock = Number(values?.stock);
       return !Number.isInteger(price) || price < 0 || !Number.isInteger(stock) || stock < 0;
     });
@@ -208,10 +241,12 @@ export default function NewProductPage() {
 
     setIsSaving(true);
     setMessage("");
+    let createdProductId: number | null = null;
     try {
       const created = await AdminService.createProduct(productForm);
       const productId = created.data?.id;
       if (!productId) throw new Error("Product creation response is invalid");
+      createdProductId = Number(productId);
 
       if (imageFiles.length) {
         const imageForm = new FormData();
@@ -225,7 +260,7 @@ export default function NewProductPage() {
         const values = variantInputs[variant.key];
         return AdminService.createVariant({
           product_id: Number(productId),
-          price: Number(values.price),
+          price: parseCurrency(values.price),
           stock: Number(values.stock),
           option_values: variant.options,
         });
@@ -235,8 +270,15 @@ export default function NewProductPage() {
       router.replace(`/admin/products/${productId}`);
     } catch (error) {
       const detail = apiMessage(error, "Produk belum dapat dibuat. Periksa data wajib dan ukuran file foto.");
-      setMessage(detail);
-      await showError("Produk belum dapat dibuat", detail);
+      const message = createdProductId
+        ? `${detail} Produk dasar sudah tersimpan. Kamu akan diarahkan ke halaman edit untuk melengkapi foto atau variasinya.`
+        : detail;
+      setMessage(message);
+      await showError(createdProductId ? "Produk tersimpan sebagian" : "Produk belum dapat dibuat", message);
+      if (createdProductId) {
+        router.replace(`/admin/products/${createdProductId}`);
+        return;
+      }
       setIsSaving(false);
     }
   };
@@ -273,24 +315,34 @@ export default function NewProductPage() {
                     <div key={group.id} className="rounded-xl border bg-white p-3">
                       <div className="flex items-center justify-between gap-2"><p className="font-medium">Variasi {index + 1}{index === 2 ? " (opsional)" : ""}</p>{variationGroups.length > 1 && <button type="button" onClick={() => removeVariationGroup(group.id)} className="text-xs text-destructive">Hapus</button>}</div>
                       <label className="mt-2 grid gap-1 text-xs text-muted-foreground">Nama variasi<input value={group.name} onChange={(event) => updateVariationGroup(group.id, { name: event.target.value })} placeholder="Contoh: Warna" className="rounded-lg border p-2 text-sm text-foreground" /></label>
-                      <label className="mt-2 grid gap-1 text-xs text-muted-foreground">Pilihan variasi<input value={group.values} onChange={(event) => updateVariationGroup(group.id, { values: event.target.value })} placeholder="Contoh: Maroon, Navy, Gold" className="rounded-lg border p-2 text-sm text-foreground" /></label>
-                      <p className="mt-1 text-[11px] text-muted-foreground">Pisahkan setiap pilihan dengan koma.</p>
+                      <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
+                        <span>Pilihan variasi</span>
+                        <div className="grid gap-2">
+                          {group.values.map((option, optionIndex) => (
+                            <div key={`${group.id}-option-${optionIndex}`} className="flex items-center gap-2">
+                              <input value={option} onChange={(event) => updateVariationOption(group.id, optionIndex, event.target.value)} placeholder={optionIndex === 0 ? "Contoh: Maroon" : "Tambahkan pilihan"} className="min-w-0 flex-1 rounded-lg border p-2 text-sm text-foreground" />
+                              <button type="button" onClick={() => removeVariationOption(group.id, optionIndex)} className="rounded-md p-2 text-destructive transition hover:bg-destructive/10" aria-label={`Hapus pilihan ${optionIndex + 1}`}>×</button>
+                            </div>
+                          ))}
+                        </div>
+                        <button type="button" onClick={() => addVariationOption(group.id)} className="mt-1 w-fit rounded-lg border border-primary/30 px-2.5 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/5">+ Tambah opsi</button>
+                      </div>
                     </div>
                   ))}
                   {variationGroups.length < 3 && <button type="button" onClick={addVariationGroup} className="min-h-32 rounded-xl border border-dashed border-primary/40 bg-white/60 p-4 text-left text-sm font-medium text-primary transition hover:bg-white">+ Tambah variasi opsional</button>}
                 </div>
                 {variants.length > 0 && <>
                   <div className="mt-5 rounded-xl border border-primary/20 bg-primary/5 p-4">
-                    <div className="flex flex-wrap items-end gap-3"><div><p className="text-sm font-semibold">Update massal</p><p className="text-xs text-muted-foreground">Terapkan harga atau stok ke semua kombinasi yang memiliki pilihan tertentu.</p></div></div>
+                    <div className="flex flex-wrap items-end gap-3"><div><p className="text-sm font-semibold">Update massal</p><p className="text-xs text-muted-foreground">Pilih <b>Semua variasi</b> untuk menerapkan harga atau stok ke seluruh kombinasi, atau pilih nilai tertentu untuk sebagian kombinasi.</p></div></div>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                      <select value={bulkGroupId} onChange={(event) => { setBulkGroupId(event.target.value); setBulkValue(""); }} className="rounded-lg border bg-white p-2 text-sm"><option value="">Pilih jenis variasi</option>{preparedGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select>
-                      <select value={bulkValue} onChange={(event) => setBulkValue(event.target.value)} className="rounded-lg border bg-white p-2 text-sm"><option value="">Pilih nilai</option>{preparedGroups.find((group) => group.id === bulkGroupId)?.items.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-                      <input type="number" min="0" value={bulkPrice} onChange={(event) => setBulkPrice(event.target.value)} placeholder="Harga (opsional)" className="rounded-lg border bg-white p-2 text-sm" />
+                      <select value={bulkGroupId} onChange={(event) => { setBulkGroupId(event.target.value); setBulkValue(""); }} className="rounded-lg border bg-white p-2 text-sm"><option value="">Pilih jenis variasi</option><option value="__all__">Semua variasi</option>{preparedGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select>
+                      <select value={bulkValue} disabled={bulkGroupId === "__all__"} onChange={(event) => setBulkValue(event.target.value)} className="rounded-lg border bg-white p-2 text-sm disabled:cursor-not-allowed disabled:bg-muted"><option value="">{bulkGroupId === "__all__" ? "Seluruh kombinasi" : "Pilih nilai"}</option>{preparedGroups.find((group) => group.id === bulkGroupId)?.items.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+                      <input type="text" inputMode="numeric" value={bulkPrice} onChange={(event) => setBulkPrice(formatCurrency(event.target.value))} placeholder="Harga (opsional)" className="rounded-lg border bg-white p-2 text-sm" />
                       <input type="number" min="0" value={bulkStock} onChange={(event) => setBulkStock(event.target.value)} placeholder="Stok (opsional)" className="rounded-lg border bg-white p-2 text-sm" />
                       <button type="button" onClick={applyBulkUpdate} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white">Terapkan</button>
                     </div>
                   </div>
-                  <div className="mt-5 overflow-x-auto rounded-xl border bg-white"><table className="w-full min-w-[580px] text-left text-sm"><thead className="border-b bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground"><tr>{preparedGroups.map((group) => <th key={group.id} className="p-3">{group.name}</th>)}<th className="p-3">Harga (Rp)</th><th className="p-3">Stok</th></tr></thead><tbody>{variants.map((variant) => { const values = variantInputs[variant.key] ?? { price: "", stock: "" }; return <tr key={variant.key} className="border-b last:border-0">{variant.options.map((option) => <td key={`${variant.key}-${option.name}`} className="p-3">{option.value}</td>)}<td className="p-3"><input required type="number" min="0" value={values.price} onChange={(event) => setVariantInputs((current) => ({ ...current, [variant.key]: { ...values, price: event.target.value } }))} className="w-36 rounded-lg border p-2" placeholder="Contoh: 299000" /></td><td className="p-3"><input required type="number" min="0" value={values.stock} onChange={(event) => setVariantInputs((current) => ({ ...current, [variant.key]: { ...values, stock: event.target.value } }))} className="w-24 rounded-lg border p-2" placeholder="0" /></td></tr>; })}</tbody></table></div>
+                  <div className="mt-5 overflow-x-auto rounded-xl border bg-white"><table className="w-full min-w-[580px] text-left text-sm"><thead className="border-b bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground"><tr>{preparedGroups.map((group) => <th key={group.id} className="p-3">{group.name}</th>)}<th className="p-3">Harga (Rp)</th><th className="p-3">Stok</th></tr></thead><tbody>{variants.map((variant) => { const values = variantInputs[variant.key] ?? { price: "", stock: "" }; return <tr key={variant.key} className="border-b last:border-0">{variant.options.map((option) => <td key={`${variant.key}-${option.name}`} className="p-3">{option.value}</td>)}<td className="p-3"><input required type="text" inputMode="numeric" value={values.price} onChange={(event) => setVariantInputs((current) => ({ ...current, [variant.key]: { ...values, price: formatCurrency(event.target.value) } }))} className="w-36 rounded-lg border p-2" placeholder="Contoh: 299.000" /></td><td className="p-3"><input required type="number" min="0" value={values.stock} onChange={(event) => setVariantInputs((current) => ({ ...current, [variant.key]: { ...values, stock: event.target.value } }))} className="w-24 rounded-lg border p-2" placeholder="0" /></td></tr>; })}</tbody></table></div>
                 </>}
                 {!variants.length && <p className="mt-4 rounded-lg border border-dashed bg-white px-3 py-3 text-xs text-muted-foreground">Belum ada variasi. Isi nama serta minimal satu pilihan variasi, misalnya Warna: Maroon, Navy.</p>}
               </fieldset>

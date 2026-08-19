@@ -42,7 +42,17 @@ export default function AdminProductsPage() {
     }
     AdminService.products()
       .then((result) => setProducts(result.data ?? []))
-      .catch(() => router.replace("/admin/login"))
+      .catch((error: { response?: { status?: number } }) => {
+        const status = error.response?.status ?? 0;
+        if ([401, 403].includes(status)) {
+          AdminSession.clear();
+          router.replace("/admin/login");
+          return;
+        }
+
+        // Server/database errors must never be treated as a logout.
+        setMessage("Produk belum dapat dimuat. Periksa kembali koneksi backend.");
+      })
       .finally(() => setIsLoading(false));
   }, [router]);
 

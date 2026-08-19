@@ -4,6 +4,8 @@ module.exports = (err, req, res, next) => {
   console.error({
     message: err.message,
     name: err.name,
+    constraint: err.parent?.constraint,
+    fields: err.errors?.map((error) => error.path).filter(Boolean),
     path: req.originalUrl,
     method: req.method,
   });
@@ -36,7 +38,7 @@ module.exports = (err, req, res, next) => {
     return ResponseHelper.conflict(
       res,
       isProduct
-        ? "Produk dengan nama atau slug tersebut sudah ada. Gunakan nama produk yang berbeda."
+        ? "Produk belum dapat dibuat karena ada data teknis yang bentrok. Coba simpan sekali lagi; bila tetap gagal, hubungi admin dengan nama produk ini."
         : err.errors[0]?.message || "Data yang sama sudah ada.",
     );
   }
@@ -44,7 +46,7 @@ module.exports = (err, req, res, next) => {
   if (err.message === "Product already exists") {
     return ResponseHelper.conflict(
       res,
-      "Produk dengan nama atau slug tersebut sudah ada. Gunakan nama produk yang berbeda.",
+      "Produk belum dapat dibuat karena URL produk sudah digunakan.",
     );
   }
 

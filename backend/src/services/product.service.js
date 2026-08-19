@@ -75,13 +75,9 @@ class ProductService {
     const collectionIds = this.parseCollectionIds(payload.collection_ids);
     delete payload.collection_ids;
 
-    payload.slug = SlugHelper.generate(payload.name);
-
-    const exist = await ProductRepository.findBySlug(payload.slug);
-
-    if (exist) {
-      throw new Error("Product already exists");
-    }
+    // Nama produk boleh sama. URL produk tetap aman karena slug dibuat unik
+    // secara otomatis (contoh: kebaya-ayu, kebaya-ayu-2).
+    payload.slug = await this.generateUniqueSlug(payload.name);
 
     if (file) {
       const optimized = await ImageHelper.product(file);
@@ -112,13 +108,7 @@ class ProductService {
     delete payload.collection_ids;
 
     if (payload.name) {
-      payload.slug = SlugHelper.generate(payload.name);
-
-      const exist = await ProductRepository.findBySlug(payload.slug);
-
-      if (exist && Number(exist.id) !== Number(id)) {
-        throw new Error("Product already exists");
-      }
+      payload.slug = await this.generateUniqueSlug(payload.name, id);
     }
 
     if (file) {
@@ -160,6 +150,28 @@ class ProductService {
     await ProductRepository.delete(id);
 
     return true;
+  }
+
+  async generateUniqueSlug(name, excludedProductId = null) {
+    const baseSlug = SlugHelper.generate(name);
+
+    if (!baseSlug) {
+      throw new Error("Nama produk tidak valid");
+    }
+
+    for (let sequence = 1; sequence <= 999; sequence += 1) {
+      const candidate = sequence === 1 ? baseSlug : `${baseSlug}-${sequence}`;
+      const existingProduct = await ProductRepository.findBySlug(candidate);
+
+      if (
+        !existingProduct ||
+        (excludedProductId !== null && Number(existingProduct.id) === Number(excludedProductId))
+      ) {
+        return candidate;
+      }
+    }
+
+    throw new Error("Tidak dapat membuat URL produk yang unik. Gunakan nama produk yang lebih spesifik.");
   }
 
   parseCollectionIds(value) {
