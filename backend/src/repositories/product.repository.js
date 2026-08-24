@@ -1,4 +1,4 @@
-const { Product, Category, Collection, ProductImage, ProductVariant, Color, Size, OrderItem, Order } = require("../../models");
+const { Product, Category, Collection, ProductImage, ProductVariant, Color, Size, OrderItem, Order, sequelize } = require("../../models");
 const { Op, fn, col, literal } = require("sequelize");
 const ORDER_STATUS = require("../constants/orderStatus");
 
@@ -45,7 +45,38 @@ class ProductRepository {
   }
   findById(id) { return Product.findByPk(id, { include: productIncludes() }); }
   findBySlug(slug) { return Product.findOne({ where: { slug }, include: productIncludes() }); }
-  create(payload) { return Product.create(payload); }
+  async create(payload) {
+    // ID selalu dibuat oleh PostgreSQL. Jangan pernah percaya ID dari request form.
+    const { id: _ignoredId, ...safePayload } = payload;
+
+    try {
+      return await Product.create(safePayload);
+    } catch (error) {
+      // Data lama/seed yang memakai ID manual dapat membuat sequence PostgreSQL
+      // tertinggal. Pulihkan sekali lalu ulangi create secara otomatis.
+      const isPrimaryKeyCollision = error.name === "SequelizeUniqueConstraintError"
+        && (error.parent?.constraint === "Product_pkey"
+          || error.parent?.constraint === "Products_pkey"
+          || error.errors?.some((item) => item.path === "id"));
+
+      if (!isPrimaryKeyCollision) {
+        throw error;
+      }
+
+      await this.syncPrimaryKeySequence();
+      return Product.create(safePayload);
+    }
+  }
+
+  async syncPrimaryKeySequence() {
+    await sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Products"', 'id'),
+        COALESCE((SELECT MAX("id") FROM "Products"), 1),
+        (SELECT COUNT(*) > 0 FROM "Products")
+      );
+    `);
+  }
   async update(id, payload) { await Product.update(payload, { where: { id } }); return this.findById(id); }
   delete(id) { return Product.destroy({ where: { id } }); }
 }

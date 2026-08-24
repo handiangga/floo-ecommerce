@@ -1,10 +1,10 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Trash2 } from "lucide-react";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { AdminService } from "@/services/admin.service";
@@ -30,6 +30,7 @@ type Variant = {
   status?: "ACTIVE" | "INACTIVE";
   color?: { name: string };
   size?: { name: string };
+  option_values?: Array<{ name: string; value: string }>;
 };
 type ProductImage = {
   id: number;
@@ -38,15 +39,19 @@ type ProductImage = {
   is_primary?: boolean;
   sort_order?: number;
 };
-type Option = { id: number; name: string };
+type VariationGroup = { id: string; name: string; values: string[] };
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
-  const [colors, setColors] = useState<Option[]>([]);
-  const [sizes, setSizes] = useState<Option[]>([]);
+  const [variationGroups, setVariationGroups] = useState<VariationGroup[]>([
+    { id: "variation-1", name: "Warna", values: [""] },
+    { id: "variation-2", name: "Ukuran", values: [""] },
+  ]);
+  const [variantPrice, setVariantPrice] = useState("");
+  const [variantStock, setVariantStock] = useState("0");
   const [images, setImages] = useState<ProductImage[]>([]);
   const [message, setMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -75,17 +80,68 @@ export default function EditProductPage() {
       AdminService.variants(id).then((result) =>
         setVariants(result.data ?? []),
       ),
-      AdminService.colors().then((result) =>
-        setColors(result.data?.data ?? result.data ?? []),
-      ),
-      AdminService.sizes().then((result) =>
-        setSizes(result.data?.data ?? result.data ?? []),
-      ),
       AdminService.images(id).then((result) =>
         setImages(result.data?.data ?? result.data ?? []),
       ),
     ]);
   }, [id]);
+
+  const preparedVariationGroups = useMemo(
+    () =>
+      variationGroups
+        .map((group) => ({
+          ...group,
+          name: group.name.trim(),
+          values: group.values.map((value) => value.trim()).filter(Boolean),
+        }))
+        .filter((group) => group.name && group.values.length),
+    [variationGroups],
+  );
+
+  const generatedVariants = useMemo(() => {
+    const build = (
+      groupIndex: number,
+      current: Array<{ name: string; value: string }>,
+    ): Array<Array<{ name: string; value: string }>> => {
+      if (groupIndex >= preparedVariationGroups.length) return [current];
+      const group = preparedVariationGroups[groupIndex];
+      return group.values.flatMap((value) =>
+        build(groupIndex + 1, [...current, { name: group.name, value }]),
+      );
+    };
+
+    return preparedVariationGroups.length ? build(0, []) : [];
+  }, [preparedVariationGroups]);
+
+  const updateVariationGroup = (
+    groupId: string,
+    patch: Partial<VariationGroup>,
+  ) => {
+    setVariationGroups((groups) =>
+      groups.map((group) =>
+        group.id === groupId ? { ...group, ...patch } : group,
+      ),
+    );
+  };
+
+  const updateVariationValue = (
+    groupId: string,
+    valueIndex: number,
+    value: string,
+  ) => {
+    setVariationGroups((groups) =>
+      groups.map((group) =>
+        group.id === groupId
+          ? {
+              ...group,
+              values: group.values.map((item, index) =>
+                index === valueIndex ? value : item,
+              ),
+            }
+          : group,
+      ),
+    );
+  };
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -197,24 +253,45 @@ export default function EditProductPage() {
 
   const createVariant = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const discountValue = String(data.get("discount_price") ?? "").trim();
+    const price = Number(variantPrice);
+    const stock = Number(variantStock);
+    if (
+      !generatedVariants.length ||
+      !Number.isFinite(price) ||
+      price < 0 ||
+      !Number.isInteger(stock) ||
+      stock < 0
+    ) {
+      const text = "Isi minimal satu pilihan variasi serta harga dan stok yang valid.";
+      setMessage(text);
+      await showError(text);
+      return;
+    }
     try {
-      await AdminService.createVariant({
-        product_id: Number(id),
-        color_id: Number(data.get("color_id")),
-        size_id: Number(data.get("size_id")),
-        price: Number(data.get("price")),
-        stock: Number(data.get("stock")),
-        discount_price: discountValue ? Number(discountValue) : undefined,
-      });
-      event.currentTarget.reset();
+      for (const optionValues of generatedVariants) {
+        await AdminService.createVariant({
+          product_id: Number(id),
+          price,
+          stock,
+          option_values: optionValues,
+        });
+      }
       await loadVariants();
-      setMessage("Varian baru berhasil ditambahkan.");
+      setVariationGroups([
+        { id: "variation-1", name: "Warna", values: [""] },
+        { id: "variation-2", name: "Ukuran", values: [""] },
+      ]);
+      setVariantPrice("");
+      setVariantStock("0");
+      const text = `${generatedVariants.length} varian berhasil ditambahkan.`;
+      setMessage(text);
+      await showSuccess(text);
     } catch {
-      setMessage(
-        "Varian belum dapat ditambahkan. Kombinasi warna dan ukuran harus unik.",
-      );
+      await loadVariants();
+      const text =
+        "Sebagian atau seluruh variasi belum dapat ditambahkan. Kombinasi yang sama tidak boleh dibuat dua kali.";
+      setMessage(text);
+      await showError(text);
     }
   };
 
@@ -420,7 +497,11 @@ export default function EditProductPage() {
                   className="grid gap-3 rounded-xl border border-border p-4 md:grid-cols-[1.2fr_1fr_1fr_0.7fr_0.8fr_auto] md:items-end"
                 >
                   <p className="pb-3 text-sm font-medium md:pb-0">
-                    {variant.color?.name} · {variant.size?.name}
+                    {variant.option_values?.length
+                      ? variant.option_values
+                          .map((option) => `${option.name}: ${option.value}`)
+                          .join(" · ")
+                      : `${variant.color?.name ?? "-"} · ${variant.size?.name ?? "-"}`}
                   </p>
                   <label className="grid gap-1 text-xs text-muted-foreground">
                     Harga normal
@@ -493,85 +574,111 @@ export default function EditProductPage() {
 
             <form
               onSubmit={(event) => void createVariant(event)}
-              className="mt-6 grid gap-3 rounded-xl bg-muted/60 p-4 md:grid-cols-5 md:items-end"
+              className="mt-6 space-y-5 rounded-2xl border border-[#eadfd4] bg-[#fcfaf7] p-5"
             >
-              <p className="text-sm font-semibold md:col-span-5">
-                Tambah Varian
-              </p>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Warna
-                <select
-                  name="color_id"
-                  required
-                  defaultValue=""
-                  className="rounded border bg-white p-2 text-sm text-foreground"
-                >
-                  <option value="" disabled>
-                    Pilih warna
-                  </option>
-                  {colors.map((color) => (
-                    <option key={color.id} value={color.id}>
-                      {color.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Ukuran
-                <select
-                  name="size_id"
-                  required
-                  defaultValue=""
-                  className="rounded border bg-white p-2 text-sm text-foreground"
-                >
-                  <option value="" disabled>
-                    Pilih ukuran
-                  </option>
-                  {sizes.map((size) => (
-                    <option key={size.id} value={size.id}>
-                      {size.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Harga normal
-                <input
-                  name="price"
-                  type="number"
-                  min="0"
-                  required
-                  className="rounded border bg-white p-2 text-sm text-foreground"
-                />
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Harga diskon
-                <input
-                  name="discount_price"
-                  type="number"
-                  min="0"
-                  placeholder="Opsional"
-                  className="rounded border bg-white p-2 text-sm text-foreground"
-                />
-              </label>
-              <div className="flex gap-2">
-                <label className="grid flex-1 gap-1 text-xs text-muted-foreground">
-                  Stok
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold">Tambah variasi manual</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Isi pilihan seperti Warna: Maroon, Navy dan Ukuran: S, M, L. Sistem membuat semua kombinasinya.
+                  </p>
+                </div>
+                {variationGroups.length < 3 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVariationGroups((groups) => [
+                        ...groups,
+                        { id: `variation-${Date.now()}`, name: "", values: [""] },
+                      ])
+                    }
+                    className="rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary"
+                  >
+                    + Variasi opsional
+                  </button>
+                )}
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                {variationGroups.map((group, groupIndex) => (
+                  <div key={group.id} className="rounded-xl border bg-white p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="font-medium">Variasi {groupIndex + 1}</p>
+                      {variationGroups.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setVariationGroups((groups) => groups.filter((item) => item.id !== group.id))}
+                          className="text-xs text-destructive"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                    <label className="grid gap-1 text-xs text-muted-foreground">
+                      Nama variasi
+                      <input
+                        value={group.name}
+                        onChange={(event) => updateVariationGroup(group.id, { name: event.target.value })}
+                        placeholder="Contoh: Warna"
+                        className="rounded-lg border p-2 text-sm text-foreground"
+                      />
+                    </label>
+                    <div className="mt-3 grid gap-2">
+                      <span className="text-xs text-muted-foreground">Pilihan variasi</span>
+                      {group.values.map((value, valueIndex) => (
+                        <div key={`${group.id}-${valueIndex}`} className="flex gap-2">
+                          <input
+                            value={value}
+                            onChange={(event) => updateVariationValue(group.id, valueIndex, event.target.value)}
+                            placeholder="Contoh: Maroon"
+                            className="min-w-0 flex-1 rounded-lg border p-2 text-sm text-foreground"
+                          />
+                          {group.values.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => updateVariationGroup(group.id, { values: group.values.filter((_, index) => index !== valueIndex) })}
+                              aria-label="Hapus pilihan"
+                              className="rounded-lg px-2 text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => updateVariationGroup(group.id, { values: [...group.values, ""] })}
+                        className="w-fit text-xs font-medium text-primary"
+                      >
+                        + Tambah pilihan
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-3 rounded-xl bg-white p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                <label className="grid gap-1 text-xs text-muted-foreground">
+                  Harga normal untuk kombinasi baru
                   <input
-                    name="stock"
-                    type="number"
-                    min="0"
-                    required
-                    defaultValue="0"
-                    className="rounded border bg-white p-2 text-sm text-foreground"
+                    inputMode="numeric"
+                    value={variantPrice ? Number(variantPrice).toLocaleString("id-ID") : ""}
+                    onChange={(event) => setVariantPrice(event.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="Contoh: 299.000"
+                    className="rounded-lg border p-2 text-sm text-foreground"
                   />
                 </label>
-                <button
-                  type="submit"
-                  className="self-end rounded-full bg-primary p-2.5 text-white"
-                  aria-label="Tambah varian"
-                >
-                  <Plus className="size-4" />
+                <label className="grid gap-1 text-xs text-muted-foreground">
+                  Stok per kombinasi
+                  <input
+                    inputMode="numeric"
+                    value={variantStock}
+                    onChange={(event) => setVariantStock(event.target.value.replace(/[^0-9]/g, ""))}
+                    className="rounded-lg border p-2 text-sm text-foreground"
+                  />
+                </label>
+                <button type="submit" className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-white">
+                  Tambahkan{generatedVariants.length ? ` ${generatedVariants.length}` : ""} varian
                 </button>
               </div>
             </form>

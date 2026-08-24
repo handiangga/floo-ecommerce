@@ -10,7 +10,9 @@
     "db:migrate": "sequelize-cli db:migrate --config config/config.js",
     "db:migrate:undo": "sequelize-cli db:migrate:undo --config config/config.js",
     "db:seed:roles": "sequelize-cli db:seed --seed 20260628120314-role-seeder.js --config config/config.js",
-    "db:seed:owner": "sequelize-cli db:seed --seed 20260628120326-user-seeder.js --config config/config.js"
+    "db:seed:owner": "sequelize-cli db:seed --seed 20260628120326-user-seeder.js --config config/config.js",
+    "db:repair-product-sequence": "node scripts/repair-product-sequence.js",
+    "db:repair-variant-sequences": "node scripts/repair-variant-sequences.js"
   },
   "keywords": [],
   "author": "",

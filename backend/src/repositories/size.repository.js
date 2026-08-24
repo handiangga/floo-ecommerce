@@ -1,5 +1,5 @@
-const { Size } = require("../../models");
-const { Op } = require("sequelize");
+const { Size, sequelize } = require("../../models");
+const { Op, fn, col, where } = require("sequelize");
 
 class SizeRepository {
   async findAll({
@@ -36,12 +36,34 @@ class SizeRepository {
 
   async findByName(name) {
     return Size.findOne({
-      where: { name },
+      where: where(fn("LOWER", col("name")), String(name).trim().toLowerCase()),
     });
   }
 
   async create(payload) {
-    return Size.create(payload);
+    try {
+      return await Size.create(payload);
+    } catch (error) {
+      if (!this.isPrimaryKeyCollision(error)) throw error;
+      await this.syncPrimaryKeySequence();
+      return Size.create(payload);
+    }
+  }
+
+  isPrimaryKeyCollision(error) {
+    return error?.name === "SequelizeUniqueConstraintError"
+      && (error.parent?.constraint === "Sizes_pkey"
+        || error.errors?.some((item) => item.path === "id"));
+  }
+
+  async syncPrimaryKeySequence() {
+    await sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Sizes"', 'id'),
+        COALESCE((SELECT MAX("id") FROM "Sizes"), 1),
+        EXISTS(SELECT 1 FROM "Sizes")
+      );
+    `);
   }
 
   async update(id, payload) {

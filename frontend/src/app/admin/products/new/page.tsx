@@ -256,15 +256,18 @@ export default function NewProductPage() {
         await AdminService.uploadImages(imageForm);
       }
 
-      await Promise.all(variants.map((variant) => {
+      // Create variants one by one. Besides making an error point to the
+      // actual failed combination, this prevents duplicate legacy Color/Size
+      // records from being created concurrently.
+      for (const variant of variants) {
         const values = variantInputs[variant.key];
-        return AdminService.createVariant({
+        await AdminService.createVariant({
           product_id: Number(productId),
           price: parseCurrency(values.price),
           stock: Number(values.stock),
           option_values: variant.options,
         });
-      }));
+      }
 
       void showSuccessToast("Produk dan semua variasi berhasil dibuat");
       router.replace(`/admin/products/${productId}`);

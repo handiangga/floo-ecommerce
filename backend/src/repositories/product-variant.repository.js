@@ -161,7 +161,29 @@ class ProductVariantRepository {
   }
 
   async create(payload) {
-    return ProductVariant.create(payload);
+    try {
+      return await ProductVariant.create(payload);
+    } catch (error) {
+      if (!this.isPrimaryKeyCollision(error)) throw error;
+      await this.syncPrimaryKeySequence();
+      return ProductVariant.create(payload);
+    }
+  }
+
+  isPrimaryKeyCollision(error) {
+    return error?.name === "SequelizeUniqueConstraintError"
+      && (error.parent?.constraint === "ProductVariants_pkey"
+        || error.errors?.some((item) => item.path === "id"));
+  }
+
+  async syncPrimaryKeySequence() {
+    await sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"ProductVariants"', 'id'),
+        COALESCE((SELECT MAX("id") FROM "ProductVariants"), 1),
+        EXISTS(SELECT 1 FROM "ProductVariants")
+      );
+    `);
   }
 
   async update(id, payload, transaction = null) {

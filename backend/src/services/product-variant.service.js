@@ -6,6 +6,7 @@ const SizeRepository = require("../repositories/size.repository");
 
 const PaginationHelper = require("../helpers/pagination.helper");
 const SKUHelper = require("../helpers/sku.helper");
+const crypto = require("crypto");
 
 class ProductVariantService {
   normalizeOptions(optionValues) {
@@ -37,14 +38,35 @@ class ProductVariantService {
   async ensureColor(name) {
     const existing = await ColorRepository.findByName(name);
     if (existing) return existing;
-    const hex = this.optionHash(name).padStart(6, "0").slice(-6);
-    return ColorRepository.create({ name, code: `#${hex}`, status: "ACTIVE" });
+    // The legacy Color table requires a real HEX code, while the current
+    // product form accepts human labels such as navy or maroon. A SHA digest
+    // always produces valid hexadecimal characters.
+    const hex = crypto.createHash("sha256").update(String(name)).digest("hex").slice(0, 6);
+    try {
+      return await ColorRepository.create({ name: String(name).trim(), code: `#${hex}`, status: "ACTIVE" });
+    } catch (error) {
+      // Another request may have created the same label between lookup and
+      // insert. Reuse it instead of failing the whole product creation.
+      if (error?.name === "SequelizeUniqueConstraintError") {
+        const duplicate = await ColorRepository.findByName(name);
+        if (duplicate) return duplicate;
+      }
+      throw error;
+    }
   }
 
   async ensureSize(name) {
     const existing = await SizeRepository.findByName(name);
     if (existing) return existing;
-    return SizeRepository.create({ name, status: "ACTIVE" });
+    try {
+      return await SizeRepository.create({ name: String(name).trim(), status: "ACTIVE" });
+    } catch (error) {
+      if (error?.name === "SequelizeUniqueConstraintError") {
+        const duplicate = await SizeRepository.findByName(name);
+        if (duplicate) return duplicate;
+      }
+      throw error;
+    }
   }
 
   async getAll(query) {
