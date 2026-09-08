@@ -149,7 +149,12 @@ class ProductVariantService {
       throw new Error("Discount price cannot exceed price");
     }
 
-    if (payload.min_order && payload.min_order > payload.stock) {
+    const stock = Number(payload.stock ?? 0);
+    const minOrder = Number(payload.min_order ?? 1);
+
+    // Stock 0 is valid for a newly-created out-of-stock variant. The minimum
+    // order only needs to be checked when the variant is actually sellable.
+    if (stock > 0 && minOrder > stock) {
       throw new Error("Minimum order cannot exceed stock");
     }
 
@@ -207,11 +212,10 @@ class ProductVariantService {
       throw new Error("Discount price cannot exceed price");
     }
 
-    const stock = payload.stock ?? variant.stock;
+    const stock = Number(payload.stock ?? variant.stock ?? 0);
+    const minOrder = Number(payload.min_order ?? variant.min_order ?? 1);
 
-    const minOrder = payload.min_order ?? variant.min_order;
-
-    if (minOrder > stock) {
+    if (stock > 0 && minOrder > stock) {
       throw new Error("Minimum order cannot exceed stock");
     }
 

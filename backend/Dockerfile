@@ -6,7 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --include=dev && npm cache clean --force
 
 COPY . .
-RUN useradd --system --uid 1001 --create-home floo
-USER floo
+RUN useradd --system --uid 1001 --create-home floo \
+  && chmod +x docker-entrypoint.sh
+ENTRYPOINT ["./docker-entrypoint.sh"]
 EXPOSE 5000
 CMD ["node", "src/server.js"]

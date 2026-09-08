@@ -9,9 +9,7 @@ function validateEnvironment() {
     "CRON_SECRET",
     "CORS_ORIGINS",
     "FRONTEND_URL",
-    "SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_BUCKET",
+    "PUBLIC_UPLOAD_URL",
     "MIDTRANS_SERVER_KEY",
     "MIDTRANS_CLIENT_KEY",
     "GOOGLE_CLIENT_ID",
@@ -34,7 +32,7 @@ function validateEnvironment() {
     throw new Error("CRON_SECRET must be at least 32 characters in production");
   }
 
-  for (const variable of ["FRONTEND_URL", "GOOGLE_REDIRECT_URI"]) {
+  for (const variable of ["FRONTEND_URL", "PUBLIC_UPLOAD_URL", "GOOGLE_REDIRECT_URI"]) {
     let value;
     try {
       value = new URL(process.env[variable]);

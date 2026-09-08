@@ -1,6 +1,6 @@
 const ProductRepository = require("../repositories/product.repository");
 const ProductImageRepository = require("../repositories/product-image.repository");
-const SupabaseService = require("./supabase.service");
+const StorageService = require("./local-storage.service");
 const ImageHelper = require("../helpers/image.helper");
 
 class ProductImageService {
@@ -27,7 +27,7 @@ class ProductImageService {
     const uploads = files.length
       ? await Promise.all(files.map(async (file, index) => {
           const optimized = await ImageHelper.product(file);
-          const upload = await SupabaseService.upload(optimized, "products");
+          const upload = await StorageService.upload(optimized, "products");
           return {
             ...payload,
             image: upload.public_url,
@@ -51,6 +51,7 @@ class ProductImageService {
       throw new Error("Product image not found");
     }
 
+    await StorageService.removeByPublicUrl(image.image);
     await ProductImageRepository.delete(id);
 
     return true;

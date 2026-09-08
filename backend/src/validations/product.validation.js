@@ -5,7 +5,7 @@ const Status = require("../constants/productStatus");
 module.exports = {
   create: Joi.object({
     category_id: Joi.number().integer().required(),
-    subcategory_id: Joi.number().integer().allow(null, ""),
+    subcategory_id: Joi.number().integer().allow(null).empty("").default(null),
     collection_ids: Joi.alternatives().try(Joi.array().items(Joi.number().integer()), Joi.string().allow("")),
 
     name: Joi.string().min(2).max(150).required(),
@@ -16,7 +16,7 @@ module.exports = {
 
     brand: Joi.string().default("Floo Fashionn"),
 
-    weight: Joi.number().integer().min(0).default(0),
+    weight: Joi.number().integer().min(0).empty("").default(0),
 
     is_ready_stock: Joi.boolean().default(true),
 
@@ -39,7 +39,7 @@ module.exports = {
 
   update: Joi.object({
     category_id: Joi.number().integer(),
-    subcategory_id: Joi.number().integer().allow(null, ""),
+    subcategory_id: Joi.number().integer().allow(null).empty("").default(null),
     collection_ids: Joi.alternatives().try(Joi.array().items(Joi.number().integer()), Joi.string().allow("")),
 
     name: Joi.string().min(2).max(150),
@@ -50,7 +50,7 @@ module.exports = {
 
     brand: Joi.string(),
 
-    weight: Joi.number().integer().min(0),
+    weight: Joi.number().integer().min(0).empty(""),
 
     is_ready_stock: Joi.boolean(),
 

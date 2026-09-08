@@ -1,7 +1,8 @@
 const ProductRepository = require("../repositories/product.repository");
 const ProductVariantRepository = require("../repositories/product-variant.repository");
+const ProductImageRepository = require("../repositories/product-image.repository");
 const CategoryRepository = require("../repositories/category.repository");
-const SupabaseService = require("./supabase.service");
+const StorageService = require("./local-storage.service");
 const ImageHelper = require("../helpers/image.helper");
 
 const PaginationHelper = require("../helpers/pagination.helper");
@@ -69,8 +70,9 @@ class ProductService {
     return product;
   }
 
-  async create(payload, file) {
-    this.normalizeFulfillment(payload, true);
+    async create(payload, file) {
+        this.normalizeNumericFields(payload);
+        this.normalizeFulfillment(payload, true);
     await this.validateClassification(payload);
     const collectionIds = this.parseCollectionIds(payload.collection_ids);
     delete payload.collection_ids;
@@ -82,7 +84,7 @@ class ProductService {
     if (file) {
       const optimized = await ImageHelper.product(file);
 
-      const upload = await SupabaseService.upload(optimized, "products");
+      const upload = await StorageService.upload(optimized, "products");
 
       payload.image_url = upload.public_url;
       payload.image_path = upload.path;
@@ -93,15 +95,16 @@ class ProductService {
     return ProductRepository.findById(product.id);
   }
 
-  async update(id, payload, file) {
+    async update(id, payload, file) {
     const product = await ProductRepository.findById(id);
 
     if (!product) {
       throw new Error("Product not found");
     }
 
-    const availabilityWasUpdated = ["is_ready_stock", "is_preorder", "preorder_days"].some((field) => Object.prototype.hasOwnProperty.call(payload, field));
-    this.normalizeFulfillment(payload, false);
+        const availabilityWasUpdated = ["is_ready_stock", "is_preorder", "preorder_days"].some((field) => Object.prototype.hasOwnProperty.call(payload, field));
+        this.normalizeNumericFields(payload);
+        this.normalizeFulfillment(payload, false);
     await this.validateClassification({ ...product.toJSON(), ...payload });
     const hasCollections = Object.prototype.hasOwnProperty.call(payload, "collection_ids");
     const collectionIds = this.parseCollectionIds(payload.collection_ids);
@@ -113,12 +116,12 @@ class ProductService {
 
     if (file) {
       if (product.image_path) {
-        await SupabaseService.remove(product.image_path);
+        await StorageService.remove(product.image_path);
       }
 
       const optimized = await ImageHelper.product(file);
 
-      const upload = await SupabaseService.upload(optimized, "products");
+      const upload = await StorageService.upload(optimized, "products");
 
       payload.image_url = upload.public_url;
       payload.image_path = upload.path;
@@ -144,8 +147,11 @@ class ProductService {
     }
 
     if (product.image_path) {
-      await SupabaseService.remove(product.image_path);
+      await StorageService.remove(product.image_path);
     }
+
+    const gallery = await ProductImageRepository.findAll(product.id);
+    await Promise.all(gallery.map((image) => StorageService.removeByPublicUrl(image.image)));
 
     await ProductRepository.delete(id);
 
@@ -174,13 +180,32 @@ class ProductService {
     throw new Error("Tidak dapat membuat URL produk yang unik. Gunakan nama produk yang lebih spesifik.");
   }
 
-  parseCollectionIds(value) {
+    parseCollectionIds(value) {
     if (!value) return [];
     const parsed = Array.isArray(value) ? value : JSON.parse(value);
     return [...new Set(parsed.map(Number).filter(Number.isInteger))];
-  }
+    }
 
-  normalizeFulfillment(payload, isCreate) {
+    normalizeNumericFields(payload) {
+        const fields = ["category_id", "subcategory_id", "weight"];
+
+        fields.forEach((field) => {
+            if (!Object.prototype.hasOwnProperty.call(payload, field)) return;
+
+            const value = payload[field];
+            if (value === "" || value === undefined || value === null) {
+                if (field === "subcategory_id") payload[field] = null;
+                else if (field === "weight") payload[field] = 0;
+                else delete payload[field];
+                return;
+            }
+
+            const numericValue = Number(value);
+            if (Number.isInteger(numericValue)) payload[field] = numericValue;
+        });
+    }
+
+    normalizeFulfillment(payload, isCreate) {
     const availabilityFields = ["is_ready_stock", "is_preorder", "preorder_days"];
     const shouldNormalize = isCreate || availabilityFields.some((field) => Object.prototype.hasOwnProperty.call(payload, field));
 

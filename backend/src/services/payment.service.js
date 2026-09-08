@@ -1,7 +1,7 @@
 "use strict";
 
 const MidtransService = require("./midtrans.service");
-const SupabaseService = require("./supabase.service");
+const StorageService = require("./local-storage.service");
 const PaymentRepository = require("../repositories/payment.repository");
 const OrderRepository = require("../repositories/order.repository");
 
@@ -173,10 +173,10 @@ class PaymentService {
     }
 
     if (payment.proof_path) {
-      await SupabaseService.remove(payment.proof_path);
+      await StorageService.remove(payment.proof_path);
     }
 
-    const upload = await SupabaseService.upload(file, "payment-proofs");
+    const upload = await StorageService.upload(file, "payment-proofs");
     return PaymentRepository.update(id, {
       proof_url: upload.public_url,
       proof_path: upload.path,

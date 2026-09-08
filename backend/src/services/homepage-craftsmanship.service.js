@@ -1,5 +1,5 @@
 const HomepageCraftsmanshipRepository = require("../repositories/homepage-craftsmanship.repository");
-const SupabaseService = require("./supabase.service");
+const StorageService = require("./local-storage.service");
 const ImageHelper = require("../helpers/image.helper");
 
 const defaults = {
@@ -35,7 +35,7 @@ class HomepageCraftsmanshipService {
     for (const file of files) {
       const index = Number(file.fieldname.replace("image_", ""));
       if (!Number.isInteger(index) || index < 0 || index > 4) continue;
-      const uploaded = await SupabaseService.upload(await ImageHelper.product(file), "craftsmanship");
+      const uploaded = await StorageService.upload(await ImageHelper.product(file), "craftsmanship");
       if (existingImages[index]) replacedImages.push(existingImages[index]);
       nextImages[index] = uploaded.public_url;
     }
@@ -68,7 +68,7 @@ class HomepageCraftsmanshipService {
       : await HomepageCraftsmanshipRepository.create(next);
 
     await Promise.all(replacedImages.map(async (oldImage) => {
-      try { await SupabaseService.removeByPublicUrl(oldImage); } catch (error) { console.error("Failed to remove replaced craftsmanship image:", error.message); }
+      try { await StorageService.removeByPublicUrl(oldImage); } catch (error) { console.error("Failed to remove replaced craftsmanship image:", error.message); }
     }));
     return result;
   }

@@ -1,5 +1,5 @@
 const HomepageOccasionRepository = require("../repositories/homepage-occasion.repository");
-const SupabaseService = require("./supabase.service");
+const StorageService = require("./local-storage.service");
 const ImageHelper = require("../helpers/image.helper");
 
 class HomepageOccasionService {
@@ -21,7 +21,7 @@ class HomepageOccasionService {
     return item;
   }
   async create(payload, file) {
-    if (file) payload.image = (await SupabaseService.upload(await ImageHelper.product(file), "occasions")).public_url;
+    if (file) payload.image = (await StorageService.upload(await ImageHelper.product(file), "occasions")).public_url;
     if (!payload.image) throw new Error("Gambar occasion diperlukan");
     payload.link = "/products";
     const created = await HomepageOccasionRepository.create(payload);
@@ -30,12 +30,12 @@ class HomepageOccasionService {
   }
   async update(id, payload, file) {
     const item = await this.getById(id);
-    if (file) payload.image = (await SupabaseService.upload(await ImageHelper.product(file), "occasions")).public_url;
+    if (file) payload.image = (await StorageService.upload(await ImageHelper.product(file), "occasions")).public_url;
     payload.link = "/products";
     delete payload.status;
     await HomepageOccasionRepository.update(id, payload);
     if (file && item.image && item.image !== payload.image) {
-      try { await SupabaseService.removeByPublicUrl(item.image); } catch (error) { console.error("Failed to remove replaced occasion image:", error.message); }
+      try { await StorageService.removeByPublicUrl(item.image); } catch (error) { console.error("Failed to remove replaced occasion image:", error.message); }
     }
     await this.syncActiveSlots();
     return this.getById(id);
@@ -43,7 +43,7 @@ class HomepageOccasionService {
   async delete(id) {
     const item = await this.getById(id);
     await HomepageOccasionRepository.delete(id);
-    try { await SupabaseService.removeByPublicUrl(item.image); } catch (error) { console.error("Failed to remove occasion image:", error.message); }
+    try { await StorageService.removeByPublicUrl(item.image); } catch (error) { console.error("Failed to remove occasion image:", error.message); }
     await this.syncActiveSlots();
     return true;
   }

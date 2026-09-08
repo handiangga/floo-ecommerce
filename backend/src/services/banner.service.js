@@ -1,6 +1,6 @@
 const BannerRepository = require("../repositories/banner.repository");
 const PaginationHelper = require("../helpers/pagination.helper");
-const SupabaseService = require("./supabase.service");
+const StorageService = require("./local-storage.service");
 const ImageHelper = require("../helpers/image.helper");
 
 class BannerService {
@@ -34,7 +34,7 @@ class BannerService {
 
   async create(payload, file) {
     if (file) {
-      const uploaded = await SupabaseService.upload(await ImageHelper.banner(file), "banners");
+      const uploaded = await StorageService.upload(await ImageHelper.banner(file), "banners");
       payload.image = uploaded.public_url;
     }
     return BannerRepository.create(payload);
@@ -48,14 +48,14 @@ class BannerService {
     }
 
     if (file) {
-      const uploaded = await SupabaseService.upload(await ImageHelper.banner(file), "banners");
+      const uploaded = await StorageService.upload(await ImageHelper.banner(file), "banners");
       payload.image = uploaded.public_url;
     }
     const updated = await BannerRepository.update(id, payload);
 
     if (file && banner.image && banner.image !== payload.image) {
       try {
-        await SupabaseService.removeByPublicUrl(banner.image);
+        await StorageService.removeByPublicUrl(banner.image);
       } catch (error) {
         console.error("Failed to remove replaced banner image:", error.message);
       }
@@ -75,7 +75,7 @@ class BannerService {
 
     if (banner.image) {
       try {
-        await SupabaseService.removeByPublicUrl(banner.image);
+        await StorageService.removeByPublicUrl(banner.image);
       } catch (error) {
         console.error("Failed to remove deleted banner image:", error.message);
       }

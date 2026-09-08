@@ -25,11 +25,15 @@ services:
       NODE_ENV: production
       PORT: 5000
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      UPLOADS_DIR: /app/uploads
+      PUBLIC_UPLOAD_URL: ${PUBLIC_UPLOAD_URL}
     depends_on:
       db:
         condition: service_healthy
     expose:
       - "5000"
+    volumes:
+      - uploads_data:/app/uploads
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:5000/api/v1/health/ready', { signal: AbortSignal.timeout(4500) }).then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
@@ -49,6 +53,23 @@ services:
       db:
         condition: service_healthy
     command: ["npm", "run", "db:migrate"]
+
+  storage-migrate:
+    build: ./backend
+    profiles: ["tools"]
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      UPLOADS_DIR: /app/uploads
+      PUBLIC_UPLOAD_URL: ${PUBLIC_UPLOAD_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    command: ["node", "scripts/migrate-supabase-storage.js"]
 
   backup:
     image: postgres:16-alpine
@@ -72,10 +93,16 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        ADMIN_HOST: ${ADMIN_HOST}
+        NEXT_PUBLIC_ADMIN_HOST: ${NEXT_PUBLIC_ADMIN_HOST}
+        STOREFRONT_HOST: ${STOREFRONT_HOST}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3000
+      ADMIN_HOST: ${ADMIN_HOST}
+      NEXT_PUBLIC_ADMIN_HOST: ${NEXT_PUBLIC_ADMIN_HOST}
+      STOREFRONT_HOST: ${STOREFRONT_HOST}
     depends_on:
       - backend
     expose:
@@ -110,3 +137,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
